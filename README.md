@@ -137,15 +137,29 @@ docker compose up --build
 
 ## Verificar que funciona
 
-### 1. Swagger
-
-Abre en el navegador:
+Abre Swagger en el navegador:
 
 ```text
 http://localhost:3001/api/docs
 ```
 
-### 2. Registrar un usuario
+---
+
+## Ejemplos curl (todos los endpoints)
+
+Base URL del servicio:
+
+```text
+http://localhost:3001/api
+```
+
+Flujo recomendado: **registrar** → **iniciar sesión** → copiar `tokenAcceso` y `tokenRefresco` → probar el resto.
+
+En los ejemplos protegidos, reemplaza `TU_TOKEN_ACCESO` y `TU_TOKEN_REFRESCO` por los valores devueltos al iniciar sesión.
+
+### Usuarios
+
+#### POST `/api/usuarios` — Registrar usuario (sin auth)
 
 ```bash
 curl -X POST http://localhost:3001/api/usuarios \
@@ -153,7 +167,56 @@ curl -X POST http://localhost:3001/api/usuarios \
   -d "{\"nombre\":\"Juan Pérez\",\"email\":\"juan@example.com\",\"contrasena\":\"SecurePass123!\"}"
 ```
 
-### 3. Iniciar sesión
+Con rol específico (opcional):
+
+```bash
+curl -X POST http://localhost:3001/api/usuarios \
+  -H "Content-Type: application/json" \
+  -d "{\"nombre\":\"María López\",\"email\":\"maria@example.com\",\"contrasena\":\"SecurePass123!\",\"rolId\":2}"
+```
+
+#### GET `/api/usuarios` — Listar usuarios (JWT)
+
+```bash
+curl -X GET http://localhost:3001/api/usuarios \
+  -H "Authorization: Bearer TU_TOKEN_ACCESO"
+```
+
+#### GET `/api/usuarios/:id` — Obtener usuario por ID (JWT)
+
+```bash
+curl -X GET http://localhost:3001/api/usuarios/1 \
+  -H "Authorization: Bearer TU_TOKEN_ACCESO"
+```
+
+#### PATCH `/api/usuarios/:id` — Actualizar usuario (JWT)
+
+```bash
+curl -X PATCH http://localhost:3001/api/usuarios/1 \
+  -H "Authorization: Bearer TU_TOKEN_ACCESO" \
+  -H "Content-Type: application/json" \
+  -d "{\"nombre\":\"Juan Pérez Actualizado\",\"activo\":true}"
+```
+
+Actualizar contraseña:
+
+```bash
+curl -X PATCH http://localhost:3001/api/usuarios/1 \
+  -H "Authorization: Bearer TU_TOKEN_ACCESO" \
+  -H "Content-Type: application/json" \
+  -d "{\"contrasena\":\"NuevaSecurePass123!\"}"
+```
+
+#### DELETE `/api/usuarios/:id` — Eliminar usuario (JWT)
+
+```bash
+curl -X DELETE http://localhost:3001/api/usuarios/1 \
+  -H "Authorization: Bearer TU_TOKEN_ACCESO"
+```
+
+### Autenticación
+
+#### POST `/api/autenticacion/iniciar-sesion` — Iniciar sesión (sin auth)
 
 ```bash
 curl -X POST http://localhost:3001/api/autenticacion/iniciar-sesion \
@@ -161,13 +224,69 @@ curl -X POST http://localhost:3001/api/autenticacion/iniciar-sesion \
   -d "{\"email\":\"juan@example.com\",\"contrasena\":\"SecurePass123!\"}"
 ```
 
-Respuesta incluye `tokenAcceso`, `tokenRefresco` y datos del `usuario`.
+Respuesta esperada (fechas en formato `dd-mm-yyyy HH:mm:ss`):
 
-### 4. Perfil autenticado
+```json
+{
+  "tokenAcceso": "eyJhbGciOiJIUzI1NiIs...",
+  "tokenRefresco": "a1b2c3d4e5f6...",
+  "expiraEn": "15m",
+  "usuario": {
+    "id": 1,
+    "nombre": "Juan Pérez",
+    "email": "juan@example.com",
+    "creadoEn": "20-06-2025 14:30:45"
+  }
+}
+```
+
+#### POST `/api/autenticacion/refrescar` — Renovar tokens (sin auth)
 
 ```bash
-curl http://localhost:3001/api/autenticacion/perfil \
+curl -X POST http://localhost:3001/api/autenticacion/refrescar \
+  -H "Content-Type: application/json" \
+  -d "{\"tokenRefresco\":\"TU_TOKEN_REFRESCO\"}"
+```
+
+#### POST `/api/autenticacion/cerrar-sesion` — Cerrar sesión (sin auth)
+
+```bash
+curl -X POST http://localhost:3001/api/autenticacion/cerrar-sesion \
+  -H "Content-Type: application/json" \
+  -d "{\"tokenRefresco\":\"TU_TOKEN_REFRESCO\"}"
+```
+
+#### GET `/api/autenticacion/perfil` — Perfil del usuario autenticado (JWT)
+
+```bash
+curl -X GET http://localhost:3001/api/autenticacion/perfil \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
+```
+
+### Roles y permisos
+
+#### GET `/api/roles` — Listar roles (JWT)
+
+```bash
+curl -X GET http://localhost:3001/api/roles \
+  -H "Authorization: Bearer TU_TOKEN_ACCESO"
+```
+
+#### GET `/api/permisos` — Listar permisos (JWT)
+
+```bash
+curl -X GET http://localhost:3001/api/permisos \
+  -H "Authorization: Bearer TU_TOKEN_ACCESO"
+```
+
+### PowerShell (Windows)
+
+Si usas PowerShell nativo, puedes probar así:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri "http://localhost:3001/api/autenticacion/iniciar-sesion" `
+  -ContentType "application/json" `
+  -Body '{"email":"juan@example.com","contrasena":"SecurePass123!"}'
 ```
 
 ---
