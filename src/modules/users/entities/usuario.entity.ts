@@ -42,10 +42,10 @@ export class UsuarioEntidad {
   @Column({ name: 'activo', type: 'boolean', default: true })
   activo: boolean;
 
-  @CreateDateColumn({ name: 'creado_en' })
+  @CreateDateColumn({ name: 'creado_en', type: 'datetime', precision: 0 })
   creadoEn: Date;
 
-  @UpdateDateColumn({ name: 'actualizado_en' })
+  @UpdateDateColumn({ name: 'actualizado_en', type: 'datetime', precision: 0 })
   actualizadoEn: Date;
 
   @ManyToOne(() => RolEntidad, (rol) => rol.usuarios, { eager: true })

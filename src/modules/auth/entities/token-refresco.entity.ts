@@ -26,7 +26,7 @@ export class TokenRefrescoEntidad {
   @Column({ type: 'text' })
   token: string;
 
-  @Column({ name: 'expira_en', type: 'datetime' })
+  @Column({ name: 'expira_en', type: 'datetime', precision: 0 })
   expiraEn: Date;
 
   @ManyToOne(() => UsuarioEntidad, (usuario) => usuario.tokensRefresco, {

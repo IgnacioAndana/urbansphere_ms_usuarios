@@ -228,8 +228,10 @@ Rutas, DTOs, métodos de servicio/repositorio y respuestas JSON están en **espa
 
 | Capa | Formato | Ejemplo |
 |------|---------|---------|
-| Base de datos MySQL | `yyyy-mm-dd HH:mm:ss` | `2025-06-20 14:30:45` |
+| Base de datos MySQL | `DATETIME` → `yyyy-mm-dd HH:mm:ss` | `2025-06-20 14:30:45` |
 | Respuestas API | `dd-mm-yyyy HH:mm:ss` | `20-06-2025 14:30:45` |
+
+> **Importante:** usar `DATETIME` sin microsegundos. Si ves `.521444` al final, ejecuta `database/migracion-fechas-datetime.sql`.
 
 El interceptor `FormatearFechasInterceptor` aplica el formato de respuesta automáticamente en todos los endpoints. Los servicios trabajan con objetos `Date` sin formatear manualmente.
 
@@ -304,6 +306,7 @@ MS_USUARIOS/
 | `Access denied for user` | Credenciales incorrectas | Revisa `DB_USER` y `DB_PASSWORD` en `.env` |
 | `Unknown database` | Esquema no creado | Crea `porsusde_urbansphere` desde el panel o ejecuta `init-all.sql` |
 | `Table doesn't exist` | Tablas no creadas o nombres antiguos en inglés | Ejecuta `database/init-all.sql` (recrear si migraste de versión anterior) |
+| Fechas con microsegundos en BD | Columnas `DATETIME(6)` antiguas | Ejecuta `database/migracion-fechas-datetime.sql` |
 | Queries SQL en consola | `DB_LOGGING=true` | Normal con logging activo; no es el script SQL. Pon `DB_LOGGING=false` |
 | Puerto en uso | Otro proceso en 3001 | Cambia `PORT` en `.env` o libera el puerto |
 
