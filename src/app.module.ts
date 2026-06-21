@@ -8,11 +8,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import rabbitmqConfig from './config/rabbitmq.config';
 import { FiltroExcepcionesHttp } from './common/filters/filtro-excepciones-http.filter';
+import { FormatearFechasInterceptor } from './common/interceptors/formatear-fechas.interceptor';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RolesModule } from './modules/roles/roles.module';
@@ -42,6 +43,10 @@ import { SemillaModule } from './seed/semilla.module';
     {
       provide: APP_FILTER,
       useClass: FiltroExcepcionesHttp,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: FormatearFechasInterceptor,
     },
   ],
 })

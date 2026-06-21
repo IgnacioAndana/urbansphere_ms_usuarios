@@ -14,6 +14,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { formatearFechaRespuesta } from '../utils/formatear-fecha.util';
 
 @Catch()
 export class FiltroExcepcionesHttp implements ExceptionFilter {
@@ -41,7 +42,7 @@ export class FiltroExcepcionesHttp implements ExceptionFilter {
 
     respuesta.status(estado).json({
       codigoEstado: estado,
-      fecha: new Date().toISOString(),
+      fecha: formatearFechaRespuesta(new Date()),
       ruta: peticion.url,
       mensaje,
     });

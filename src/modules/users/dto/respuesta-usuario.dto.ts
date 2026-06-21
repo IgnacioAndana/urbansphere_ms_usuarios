@@ -29,9 +29,17 @@ export class RespuestaUsuarioDto {
   @ApiProperty()
   activo: boolean;
 
-  @ApiProperty()
+  @ApiProperty({
+    type: String,
+    example: '20-06-2025 14:30:45',
+    description: 'En respuesta HTTP: dd-mm-yyyy HH:mm:ss',
+  })
   creadoEn: Date;
 
-  @ApiProperty()
+  @ApiProperty({
+    type: String,
+    example: '20-06-2025 14:30:45',
+    description: 'En respuesta HTTP: dd-mm-yyyy HH:mm:ss',
+  })
   actualizadoEn: Date;
 }

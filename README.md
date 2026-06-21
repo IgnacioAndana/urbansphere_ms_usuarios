@@ -224,6 +224,27 @@ Controller → Service → Repository → Entity → MySQL (porsusde_urbansphere
 
 Rutas, DTOs, métodos de servicio/repositorio y respuestas JSON están en **español**, alineados con el esquema de BD.
 
+## Formato de fechas
+
+| Capa | Formato | Ejemplo |
+|------|---------|---------|
+| Base de datos MySQL | `yyyy-mm-dd HH:mm:ss` | `2025-06-20 14:30:45` |
+| Respuestas API | `dd-mm-yyyy HH:mm:ss` | `20-06-2025 14:30:45` |
+
+El interceptor `FormatearFechasInterceptor` aplica el formato de respuesta automáticamente en todos los endpoints. Los servicios trabajan con objetos `Date` sin formatear manualmente.
+
+**Ejemplo de respuesta al registrar usuario:**
+
+```json
+{
+  "id": 1,
+  "nombre": "Juan Pérez",
+  "email": "juan@example.com",
+  "creadoEn": "20-06-2025 14:30:45",
+  "actualizadoEn": "20-06-2025 14:30:45"
+}
+```
+
 ---
 
 ## Scripts disponibles
@@ -258,7 +279,7 @@ MS_USUARIOS/
 │   └── init-all.sql      # Script del esquema compartido (3 microservicios)
 ├── src/
 │   ├── config/           # database, jwt, rabbitmq
-│   ├── common/           # guards, filters, decorators
+│   ├── common/           # guards, filters, interceptors, utils
 │   ├── modules/
 │   │   ├── users/
 │   │   ├── auth/
