@@ -153,15 +153,6 @@ npm run build
 npm run start:prod
 ```
 
-### Docker (entorno local con MySQL en contenedor)
-
-```bash
-docker compose up --build
-```
-
-- API: `http://localhost:3001`
-- MySQL del compose: puerto `3307` (solo para desarrollo local con Docker)
-
 ---
 
 ## Verificar que funciona
@@ -297,7 +288,7 @@ curl -X GET http://localhost:3001/api/autenticacion/perfil \
 
 #### POST `/api/autenticacion/solicitar-restablecimiento` — Validar email y enviar enlace
 
-Comprueba que el correo exista en la BD y envía un enlace **de un solo uso** (vía Brevo).
+Comprueba que el correo exista en la BD y envía un enlace **de un solo uso** (vía Mailtrap).
 
 ```bash
 curl -X POST http://localhost:3001/api/autenticacion/solicitar-restablecimiento \
@@ -386,21 +377,23 @@ curl -X GET http://localhost:3001/api/solicitudes-interes \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
-### Correo (Brevo API)
+### Correo (Mailtrap)
 
-1. Registro en https://www.brevo.com
-2. **Remitentes** → verifica tu email (ej. `nashogringo92@gmail.com`)
-3. **SMTP & API → Configuración de API** → genera clave `xkeysib-...`
+1. Registro en https://mailtrap.io
+2. Verifica tu dominio (ej. `urbansphere.cl`) en **Email Sending → Domains**
+3. Crea un **API Token** en Settings → API Tokens
 4. En `.env`:
 
 ```env
-BREVO_API_KEY=xkeysib-tu_api_key
-MAIL_FROM=nashogringo92@gmail.com
+MAILTRAP_API_TOKEN=tu_api_token
+MAIL_FROM=hello@urbansphere.cl
 MAIL_FROM_NAME=UrbanSphere
 FRONTEND_URL=http://13.222.88.101
 ```
 
 5. `git pull`, `npm run build`, `pm2 restart ms-usuarios`
+
+`MAIL_FROM` debe usar un email de tu **dominio verificado** en Mailtrap.
 
 Si el correo falla al restablecer contraseña, la API responde **503** y el token no queda activo.
 
@@ -530,8 +523,11 @@ MS_USUARIOS/
 ├── database/
 │   └── init-all.sql      # Script del esquema compartido (3 microservicios)
 ├── src/
-│   ├── config/           # database, jwt, rabbitmq
-│   ├── common/           # guards, filters, interceptors, utils
+│   ├── config/           # database, jwt, rabbitmq, email
+│   ├── common/           # guards, filters, interceptors, correo
+│   │   └── correo/
+│   │       ├── assets/   # logos para plantillas HTML de email
+│   │       └── plantillas/
 │   ├── modules/
 │   │   ├── users/
 │   │   ├── auth/
@@ -542,9 +538,7 @@ MS_USUARIOS/
 │   ├── app.module.ts
 │   └── main.ts
 ├── test/                 # E2E
-├── .env.example
-├── Dockerfile
-└── docker-compose.yml
+└── .env.example
 ```
 
 ---

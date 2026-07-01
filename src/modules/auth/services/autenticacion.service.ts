@@ -134,7 +134,7 @@ export class AutenticacionServicio {
     if (!correoEnviado) {
       await this.tokensRestablecimientoRepositorio.eliminarPorToken(token);
       throw new ExcepcionNegocio(
-        'No se pudo enviar el correo. Verifica BREVO_API_KEY y MAIL_FROM verificado en Brevo.',
+        'No se pudo enviar el correo. Verifica MAILTRAP_API_TOKEN y MAIL_FROM con dominio verificado.',
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     }

@@ -1,26 +1,33 @@
 /**
  * Archivo: correo.service.ts
  * Ubicación: common/services
- * Contenido: envío de correos vía Brevo API
+ * Contenido: envío de correos vía Mailtrap API con plantillas HTML
  */
 
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { MailtrapClient } from 'mailtrap';
+import {
+  plantillaRestablecimientoContrasena,
+  plantillaSolicitudInteres,
+} from '../correo/plantillas/plantilla-correo.util';
 
 @Injectable()
 export class CorreoServicio implements OnModuleInit {
   private readonly logger = new Logger(CorreoServicio.name);
+  private cliente: MailtrapClient | null = null;
 
   constructor(private readonly configServicio: ConfigService) {}
 
   onModuleInit(): void {
-    const apiKey = this.configServicio.get<string>('email.apiKey');
+    const token = this.configServicio.get<string>('email.token');
     const remitente = this.configServicio.get<string>('email.from');
 
-    if (apiKey) {
-      this.logger.log('Correo Brevo API configurado');
+    if (token) {
+      this.cliente = new MailtrapClient({ token });
+      this.logger.log('Correo Mailtrap configurado');
     } else {
-      this.logger.warn('BREVO_API_KEY no configurada: no se enviarán correos');
+      this.logger.warn('MAILTRAP_API_TOKEN no configurado: no se enviarán correos');
     }
 
     if (remitente) {
@@ -36,8 +43,10 @@ export class CorreoServicio implements OnModuleInit {
     proyectoId: number;
   }): Promise<boolean> {
     const asunto = `UrbanSphere — Interés en proyecto #${datos.proyectoId}`;
-    const texto = `Hola ${datos.nombre},\n\nRecibimos tu solicitud de interés en el proyecto #${datos.proyectoId}. Un agente se contactará contigo pronto.\n\nSaludos,\nUrbanSphere`;
-    const html = `<p>Hola <strong>${datos.nombre}</strong>,</p><p>Recibimos tu solicitud de interés en el proyecto <strong>#${datos.proyectoId}</strong>. Un agente se contactará contigo pronto.</p><p>Saludos,<br/>UrbanSphere</p>`;
+    const { html, texto } = plantillaSolicitudInteres({
+      nombre: datos.nombre,
+      proyectoId: datos.proyectoId,
+    });
 
     return this.enviarCorreo({ email: datos.email, asunto, texto, html });
   }
@@ -48,8 +57,10 @@ export class CorreoServicio implements OnModuleInit {
     enlace: string;
   }): Promise<boolean> {
     const asunto = 'UrbanSphere — Restablecer contraseña';
-    const texto = `Hola ${datos.nombre},\n\nRecibimos una solicitud para restablecer tu contraseña.\n\nUsa este enlace (válido por tiempo limitado y un solo uso):\n${datos.enlace}\n\nSi no solicitaste esto, ignora este correo.\n\nSaludos,\nUrbanSphere`;
-    const html = `<p>Hola <strong>${datos.nombre}</strong>,</p><p>Recibimos una solicitud para restablecer tu contraseña.</p><p><a href="${datos.enlace}">Restablecer contraseña</a></p><p>Este enlace es de <strong>un solo uso</strong> y expira en breve.</p><p>Si no solicitaste esto, ignora este correo.</p><p>Saludos,<br/>UrbanSphere</p>`;
+    const { html, texto } = plantillaRestablecimientoContrasena({
+      nombre: datos.nombre,
+      enlace: datos.enlace,
+    });
 
     return this.enviarCorreo({ email: datos.email, asunto, texto, html });
   }
@@ -60,12 +71,11 @@ export class CorreoServicio implements OnModuleInit {
     texto: string;
     html: string;
   }): Promise<boolean> {
-    const apiKey = this.configServicio.get<string>('email.apiKey');
     const remitenteEmail = this.configServicio.get<string>('email.from');
     const remitenteNombre = this.configServicio.get<string>('email.fromName') || 'UrbanSphere';
 
-    if (!apiKey) {
-      this.logger.warn('BREVO_API_KEY no configurada: correo no enviado');
+    if (!this.cliente) {
+      this.logger.warn('MAILTRAP_API_TOKEN no configurado: correo no enviado');
       return false;
     }
 
@@ -75,31 +85,16 @@ export class CorreoServicio implements OnModuleInit {
     }
 
     try {
-      const respuesta = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-          'api-key': apiKey,
-        },
-        body: JSON.stringify({
-          sender: { name: remitenteNombre, email: remitenteEmail },
-          to: [{ email: datos.email }],
-          subject: datos.asunto,
-          htmlContent: datos.html,
-          textContent: datos.texto,
-        }),
+      const resultado = await this.cliente.send({
+        from: { email: remitenteEmail, name: remitenteNombre },
+        to: [{ email: datos.email }],
+        subject: datos.asunto,
+        text: datos.texto,
+        html: datos.html,
+        category: 'UrbanSphere',
       });
 
-      if (!respuesta.ok) {
-        const cuerpo = await respuesta.text();
-        throw new Error(cuerpo || `Brevo respondió ${respuesta.status}`);
-      }
-
-      const resultado = (await respuesta.json()) as { messageId?: string };
-      this.logger.log(
-        `Correo enviado vía Brevo a ${datos.email} (id: ${resultado.messageId ?? 'n/a'})`,
-      );
+      this.logger.log(`Correo enviado vía Mailtrap a ${datos.email} (id: ${resultado.message_ids?.[0] ?? 'n/a'})`);
       return true;
     } catch (error) {
       const mensaje = error instanceof Error ? error.message : 'Error desconocido';

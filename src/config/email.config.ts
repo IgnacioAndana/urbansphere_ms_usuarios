@@ -5,7 +5,7 @@ function trim(valor?: string): string {
 }
 
 export default registerAs('email', () => ({
-  apiKey: trim(process.env.BREVO_API_KEY),
+  token: trim(process.env.MAILTRAP_API_TOKEN),
   from: trim(process.env.MAIL_FROM),
   fromName: trim(process.env.MAIL_FROM_NAME) || 'UrbanSphere',
 }));
