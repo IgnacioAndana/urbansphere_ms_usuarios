@@ -24,7 +24,7 @@ async function bootstrap(): Promise<void> {
 
   const config = new DocumentBuilder()
     .setTitle('UrbanSphere - MS Usuarios')
-    .setDescription('Microservicio de usuarios, autenticación, roles y permisos')
+    .setDescription('Microservicio de usuarios, autenticación, roles y solicitudes de interés')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

@@ -21,6 +21,7 @@ describe('UsuariosControlador', () => {
           provide: UsuariosServicio,
           useValue: {
             crearUsuario: jest.fn(),
+            crearUsuarioRegistro: jest.fn(),
             listarUsuarios: jest.fn(),
             buscarUsuarioPorId: jest.fn(),
             actualizarUsuario: jest.fn(),
@@ -36,9 +37,10 @@ describe('UsuariosControlador', () => {
 
   it('debe registrar usuario', async () => {
     const dto = { nombre: 'Juan', email: 'juan@example.com', contrasena: 'SecurePass123!' };
-    servicio.crearUsuario.mockResolvedValue({ id: 1, ...dto } as never);
-    const resultado = await controlador.crearUsuario(dto);
+    servicio.crearUsuarioRegistro.mockResolvedValue({ id: 1, ...dto } as never);
+    const resultado = await controlador.crearUsuario(dto, null);
     expect(resultado.id).toBe(1);
+    expect(servicio.crearUsuarioRegistro).toHaveBeenCalledWith(dto);
   });
 
   it('debe listar usuarios', async () => {

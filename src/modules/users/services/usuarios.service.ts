@@ -24,6 +24,11 @@ export class UsuariosServicio {
     private readonly rolesRepositorio: RolesRepositorio,
   ) {}
 
+  async crearUsuarioRegistro(dto: CrearUsuarioDto): Promise<RespuestaUsuarioDto> {
+    const { rolId: _rolId, ...datosRegistro } = dto;
+    return this.crearUsuario({ ...datosRegistro, rolId: undefined });
+  }
+
   async crearUsuario(dto: CrearUsuarioDto): Promise<RespuestaUsuarioDto> {
     const existente = await this.usuariosRepositorio.buscarUsuarioPorEmail(dto.email);
     if (existente) {

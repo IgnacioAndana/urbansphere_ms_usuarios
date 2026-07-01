@@ -9,8 +9,8 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { CargaJwt } from '../../modules/auth/interfaces/carga-jwt.interface';
 
 export const UsuarioActual = createParamDecorator(
-  (_datos: unknown, ctx: ExecutionContext): CargaJwt => {
-    const peticion = ctx.switchToHttp().getRequest<{ user: CargaJwt }>();
-    return peticion.user;
+  (_datos: unknown, ctx: ExecutionContext): CargaJwt | null => {
+    const peticion = ctx.switchToHttp().getRequest<{ user?: CargaJwt }>();
+    return peticion.user ?? null;
   },
 );

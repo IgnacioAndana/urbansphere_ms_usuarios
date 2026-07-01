@@ -1,6 +1,6 @@
 # MS Users — UrbanSphere
 
-Microservicio de usuarios de la plataforma inmobiliaria **UrbanSphere**. Gestiona registro, autenticación JWT, perfiles, roles, permisos y refresh tokens.
+Microservicio de usuarios de la plataforma inmobiliaria **UrbanSphere**. Gestiona registro, autenticación JWT, perfiles, roles, solicitudes de interés en proyectos y refresh tokens.
 
 | Dato | Valor |
 |------|-------|
@@ -61,10 +61,16 @@ NODE_ENV=development
 
 ### 3. Base de datos
 
-Ejecuta el script SQL **antes** de levantar el servicio (crea las 13 tablas del ecosistema; este MS usa 5):
+Ejecuta el script SQL **antes** de levantar el servicio (crea las tablas del ecosistema; este MS usa 4):
 
 ```bash
 mysql -u TU_USUARIO -p -h TU_HOST porsusde_urbansphere < database/init-all.sql
+```
+
+Si ya tenías tablas `permisos` / `rol_permisos`, ejecuta la migración:
+
+```bash
+mysql -u TU_USUARIO -p -h TU_HOST porsusde_urbansphere < database/migracion-simplificar-roles.sql
 ```
 
 También puedes ejecutarlo desde **phpMyAdmin** o **MySQL Workbench** seleccionando el esquema `porsusde_urbansphere`.
@@ -73,15 +79,12 @@ También puedes ejecutarlo desde **phpMyAdmin** o **MySQL Workbench** selecciona
 
 | Tabla | Descripción |
 |-------|-------------|
-| `permisos` | Permisos del sistema |
-| `roles` | Roles (admin, user, agent) |
-| `rol_permisos` | Relación roles ↔ permisos |
+| `roles` | Roles fijos: admin, user, agent |
 | `usuarios` | Usuarios registrados |
 | `tokens_refresco` | Tokens de refresco JWT |
+| `solicitudes_interes` | Formulario "Me interesa este proyecto" |
 
-> Si ya ejecutaste una versión anterior del script con nombres en inglés, debes **recrear las tablas** ejecutando de nuevo `init-all.sql` (descomenta el bloque DROP al inicio del script si es necesario).
-
-Al primer arranque, el servicio ejecuta un **seed** que crea roles y permisos si aún no existen.
+Al primer arranque, el servicio ejecuta un **seed** que crea los 3 roles si aún no existen.
 
 ### TypeORM y queries en consola
 
@@ -263,20 +266,79 @@ curl -X GET http://localhost:3001/api/autenticacion/perfil \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
-### Roles y permisos
+### Roles y permisos por rol
 
-#### GET `/api/roles` — Listar roles (JWT)
+Los permisos se controlan por **nombre de rol** en código (sin tablas `permisos` / `rol_permisos`).
+
+| Rol | ID | Capacidades en este MS |
+|-----|----|------------------------|
+| `admin` | 1 | Todo: CRUD usuarios, listar roles, ver solicitudes de interés |
+| `agent` | 3 | Igual que admin **excepto** crear y eliminar usuarios |
+| `user` | 2 | Registro público, login, perfil, enviar solicitud de interés; ver proyectos (MS Projects) |
+
+> En MS Projects, el rol `user` solo debe poder **consultar** proyectos (GET). Eso se implementará en ese microservicio con el mismo criterio de roles del JWT.
+
+#### GET `/api/roles` — Listar roles (JWT admin o agent)
 
 ```bash
 curl -X GET http://localhost:3001/api/roles \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
-#### GET `/api/permisos` — Listar permisos (JWT)
+### Solicitudes de interés ("Me interesa este proyecto")
+
+Endpoint para el formulario del frontend. **Público** (sin login) o con JWT (usa el email de la sesión).
+
+#### POST `/api/solicitudes-interes` — Enviar solicitud
 
 ```bash
-curl -X GET http://localhost:3001/api/permisos \
+curl -X POST http://localhost:3001/api/solicitudes-interes \
+  -H "Content-Type: application/json" \
+  -d "{\"proyectoId\":1,\"nombre\":\"Juan Pérez\",\"email\":\"juan@example.com\"}"
+```
+
+Con sesión activa (el email del body se ignora y se usa el de la sesión):
+
+```bash
+curl -X POST http://localhost:3001/api/solicitudes-interes \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer TU_TOKEN_ACCESO" \
+  -d "{\"proyectoId\":1,\"nombre\":\"Juan Pérez\",\"email\":\"juan@example.com\"}"
+```
+
+#### GET `/api/solicitudes-interes` — Listar todas (JWT admin o agent)
+
+```bash
+curl -X GET http://localhost:3001/api/solicitudes-interes \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
+```
+
+### Correo (Resend)
+
+El MS envía correos con el SDK de **[Resend](https://resend.com)**. Solo necesitas estas variables en `.env`:
+
+```env
+RESEND_API_KEY=re_tu_api_key
+RESEND_FROM=onboarding@resend.dev
+```
+
+- Si **`RESEND_API_KEY` está vacía**, la solicitud se guarda en BD pero **no** se envía correo.
+- No hace falta `EMAIL_ENABLED` ni variables SMTP.
+- Plan free: **100 emails/día** a bandejas reales.
+- Con `onboarding@resend.dev` solo puedes enviar **al email con el que te registraste** en Resend. Para otros destinatarios, verifica un dominio en Resend.
+
+Reinicia el servicio tras editar `.env`:
+
+```bash
+pm2 restart ms-usuarios
+```
+
+Prueba:
+
+```bash
+curl -X POST http://localhost:3001/api/solicitudes-interes \
+  -H "Content-Type: application/json" \
+  -d "{\"proyectoId\":1,\"nombre\":\"Juan Pérez\",\"email\":\"i.andana@duocuc.cl\"}"
 ```
 
 ### PowerShell (Windows)
@@ -295,17 +357,19 @@ Invoke-RestMethod -Method Post -Uri "http://localhost:3001/api/autenticacion/ini
 
 | Método | Ruta | Descripción | Auth |
 |--------|------|-------------|------|
-| POST | `/api/usuarios` | Registro de usuario | No |
-| GET | `/api/usuarios` | Listar usuarios | JWT |
-| GET | `/api/usuarios/:id` | Obtener usuario por ID | JWT |
-| PATCH | `/api/usuarios/:id` | Actualizar usuario | JWT |
-| DELETE | `/api/usuarios/:id` | Eliminar usuario | JWT |
+| POST | `/api/usuarios` | Registro público (user) o crear usuario (admin) | Opcional |
+| GET | `/api/usuarios` | Listar usuarios | JWT admin, agent |
+| GET | `/api/usuarios/:id` | Obtener usuario por ID | JWT admin, agent |
+| PATCH | `/api/usuarios/:id` | Actualizar usuario | JWT admin, agent |
+| DELETE | `/api/usuarios/:id` | Eliminar usuario | JWT admin |
 | POST | `/api/autenticacion/iniciar-sesion` | Iniciar sesión | No |
 | POST | `/api/autenticacion/refrescar` | Renovar tokens | No |
 | POST | `/api/autenticacion/cerrar-sesion` | Cerrar sesión | No |
 | GET | `/api/autenticacion/perfil` | Perfil del usuario autenticado | JWT |
-| GET | `/api/roles` | Listar roles | JWT |
-| GET | `/api/permisos` | Listar permisos | JWT |
+| GET | `/api/roles` | Listar roles | JWT admin, agent |
+| POST | `/api/solicitudes-interes` | Me interesa este proyecto | Opcional |
+| GET | `/api/solicitudes-interes` | Listar solicitudes | JWT admin, agent |
+| GET | `/api/solicitudes-interes/proyecto/:proyectoId` | Solicitudes por proyecto | JWT admin, agent |
 
 ---
 
@@ -326,11 +390,11 @@ Controller → Service → Repository → Entity → MySQL (porsusde_urbansphere
 
 ## Roles por defecto
 
-| Rol | Descripción |
-|-----|-------------|
-| `admin` | Acceso completo |
-| `user` | Usuario estándar |
-| `agent` | Agente inmobiliario |
+| ID | Rol | Descripción |
+|----|-----|-------------|
+| 1 | `admin` | Acceso completo; puede crear y eliminar usuarios |
+| 2 | `user` | Usuario estándar; ver proyectos y enviar solicitudes de interés |
+| 3 | `agent` | Igual que admin excepto crear/eliminar usuarios |
 
 ## Modelo de datos (columnas en español)
 
@@ -338,7 +402,7 @@ Controller → Service → Repository → Entity → MySQL (porsusde_urbansphere
 |-------|---------------------|
 | `usuarios` | `nombre`, `email`, `hash_contrasena`, `rol_id`, `activo`, `creado_en`, `actualizado_en` |
 | `roles` | `nombre`, `descripcion` |
-| `permisos` | `nombre` |
+| `solicitudes_interes` | `proyecto_id`, `nombre`, `email`, `usuario_id`, `creado_en` |
 | `tokens_refresco` | `usuario_id`, `token`, `expira_en` |
 
 Rutas, DTOs, métodos de servicio/repositorio y respuestas JSON están en **español**, alineados con el esquema de BD.
@@ -405,8 +469,9 @@ MS_USUARIOS/
 │   │   ├── users/
 │   │   ├── auth/
 │   │   ├── roles/
-│   │   └── permissions/
-│   ├── seed/             # Datos iniciales roles/permisos
+│   │   ├── solicitudes-interes/
+│   │   └── roles/
+│   ├── seed/             # Datos iniciales (3 roles)
 │   ├── app.module.ts
 │   └── main.ts
 ├── test/                 # E2E

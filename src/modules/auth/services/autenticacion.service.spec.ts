@@ -31,7 +31,7 @@ describe('AutenticacionServicio', () => {
     activo: true,
     creadoEn: new Date(),
     actualizadoEn: new Date(),
-    rol: { id: 1, nombre: 'user', descripcion: '', permisos: [], usuarios: [] },
+    rol: { id: 1, nombre: 'user', descripcion: '', usuarios: [] },
     tokensRefresco: [],
   };
 

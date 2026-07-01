@@ -12,19 +12,20 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import rabbitmqConfig from './config/rabbitmq.config';
+import emailConfig from './config/email.config';
 import { FiltroExcepcionesHttp } from './common/filters/filtro-excepciones-http.filter';
 import { FormatearFechasInterceptor } from './common/interceptors/formatear-fechas.interceptor';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RolesModule } from './modules/roles/roles.module';
-import { PermissionsModule } from './modules/permissions/permissions.module';
+import { SolicitudesInteresModule } from './modules/solicitudes-interes/solicitudes-interes.module';
 import { SemillaModule } from './seed/semilla.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, rabbitmqConfig],
+      load: [databaseConfig, jwtConfig, rabbitmqConfig, emailConfig],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -36,7 +37,7 @@ import { SemillaModule } from './seed/semilla.module';
     UsersModule,
     AuthModule,
     RolesModule,
-    PermissionsModule,
+    SolicitudesInteresModule,
     SemillaModule,
   ],
   providers: [

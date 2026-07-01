@@ -21,7 +21,7 @@ describe('UsuariosServicio', () => {
   let usuariosRepositorio: jest.Mocked<UsuariosRepositorio>;
   let rolesRepositorio: jest.Mocked<RolesRepositorio>;
 
-  const rolMock = { id: 1, nombre: 'user', descripcion: 'Usuario', permisos: [] };
+  const rolMock = { id: 1, nombre: 'user', descripcion: 'Usuario' };
   const usuarioMock = {
     id: 1,
     uuid: 'uuid-prueba',
