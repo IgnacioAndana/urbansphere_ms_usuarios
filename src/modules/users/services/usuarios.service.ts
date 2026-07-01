@@ -80,7 +80,9 @@ export class UsuariosServicio {
     dto: ActualizarUsuarioDto,
     usuarioActual: CargaJwt,
   ): Promise<RespuestaUsuarioDto> {
-    const esPropioPerfil = usuarioActual.sub === id;
+    const idUsuario = Number(id);
+    const idJwt = Number(usuarioActual.sub);
+    const esPropioPerfil = idJwt === idUsuario;
     const puedeEditarOtros =
       usuarioActual.rol === ROLES.ADMIN || usuarioActual.rol === ROLES.AGENT;
 
@@ -95,7 +97,7 @@ export class UsuariosServicio {
       ? { nombre: dto.nombre, email: dto.email, contrasena: dto.contrasena }
       : dto;
 
-    return this.actualizarUsuario(id, dtoFiltrado);
+    return this.actualizarUsuario(idUsuario, dtoFiltrado);
   }
 
   async actualizarUsuario(id: number, dto: ActualizarUsuarioDto): Promise<RespuestaUsuarioDto> {

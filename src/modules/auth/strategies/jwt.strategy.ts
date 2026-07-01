@@ -27,7 +27,11 @@ export class EstrategiaJwt extends PassportStrategy(Strategy, 'jwt') {
 
   async validate(carga: CargaJwt): Promise<CargaJwt> {
     try {
-      return await this.autenticacionServicio.validarUsuario(carga);
+      const validado = await this.autenticacionServicio.validarUsuario(carga);
+      return {
+        ...validado,
+        sub: Number(validado.sub),
+      };
     } catch {
       throw new UnauthorizedException();
     }

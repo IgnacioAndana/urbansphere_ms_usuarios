@@ -104,4 +104,29 @@ describe('UsuariosServicio', () => {
     usuariosRepositorio.buscarUsuarioPorId.mockResolvedValue(null);
     await expect(servicio.buscarUsuarioPorId(999)).rejects.toThrow(ExcepcionNegocio);
   });
+
+  it('debe permitir editar el propio perfil aunque sub del JWT venga como string', async () => {
+    usuariosRepositorio.buscarUsuarioPorId.mockResolvedValue(usuarioMock as never);
+    usuariosRepositorio.actualizarUsuario.mockResolvedValue(usuarioMock as never);
+
+    await servicio.actualizarUsuarioAutorizado(
+      1,
+      { nombre: 'Juan Actualizado' },
+      { sub: '1' as unknown as number, uuid: 'uuid-prueba', email: 'juan@example.com', rol: 'user' },
+    );
+
+    expect(usuariosRepositorio.actualizarUsuario).toHaveBeenCalledWith(1, {
+      nombre: 'Juan Actualizado',
+    });
+  });
+
+  it('debe rechazar editar otro usuario si el rol es user', async () => {
+    await expect(
+      servicio.actualizarUsuarioAutorizado(
+        2,
+        { nombre: 'Otro' },
+        { sub: '1' as unknown as number, uuid: 'uuid-prueba', email: 'juan@example.com', rol: 'user' },
+      ),
+    ).rejects.toMatchObject({ status: HttpStatus.FORBIDDEN });
+  });
 });
