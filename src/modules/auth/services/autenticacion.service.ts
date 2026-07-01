@@ -134,7 +134,7 @@ export class AutenticacionServicio {
     if (!correoEnviado) {
       await this.tokensRestablecimientoRepositorio.eliminarPorToken(token);
       throw new ExcepcionNegocio(
-        'No se pudo enviar el correo de restablecimiento. Verifica la configuración SMTP o usa Brevo.',
+        'No se pudo enviar el correo de restablecimiento. Verifica BREVO_SMTP_USER, BREVO_SMTP_PASS y MAIL_FROM.',
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     }

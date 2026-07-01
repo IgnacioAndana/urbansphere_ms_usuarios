@@ -297,7 +297,7 @@ curl -X GET http://localhost:3001/api/autenticacion/perfil \
 
 #### POST `/api/autenticacion/solicitar-restablecimiento` — Validar email y enviar enlace
 
-Comprueba que el correo exista en la BD y envía un enlace **de un solo uso** (vía Resend).
+Comprueba que el correo exista en la BD y envía un enlace **de un solo uso** (vía Brevo).
 
 ```bash
 curl -X POST http://localhost:3001/api/autenticacion/solicitar-restablecimiento \
@@ -386,36 +386,26 @@ curl -X GET http://localhost:3001/api/solicitudes-interes \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
-### Correo (SMTP / Brevo recomendado)
+### Correo (Brevo SMTP)
 
-**Resend con `onboarding@resend.dev` solo permite enviar a tu propio email** (el de la cuenta). Para usuarios como `juan@example.com` usa **Brevo** (gratis, ~300 emails/día a cualquier destinatario).
-
-#### Brevo (recomendado para el proyecto)
+El MS envía correos vía **Brevo SMTP** (nodemailer).
 
 1. Registro en https://www.brevo.com
-2. SMTP & API → Claves SMTP → generar clave
-3. En `.env` del servidor:
+2. **Remitentes** → verifica tu email (ej. `nashogringo92@gmail.com`)
+3. **SMTP & API → Configuración SMTP** → copia login y contraseña
+4. En `.env` del servidor:
 
 ```env
-EMAIL_PROVIDER=smtp
-SMTP_HOST=smtp-relay.brevo.com
-SMTP_PORT=587
-SMTP_USER=tu_email@duocuc.cl
-SMTP_PASS=xsmtpsib-tu_clave_smtp
-MAIL_FROM=tu_email@duocuc.cl
+BREVO_SMTP_HOST=smtp-relay.brevo.com
+BREVO_SMTP_PORT=587
+BREVO_SMTP_USER=b0814e001@smtp-brevo.com
+BREVO_SMTP_PASS=tu_clave_smtp
+MAIL_FROM=nashogringo92@gmail.com
+MAIL_FROM_NAME=UrbanSphere
+FRONTEND_URL=http://13.222.88.101
 ```
 
-4. `pm2 restart ms-usuarios`
-
-#### Resend (solo pruebas contigo mismo)
-
-```env
-EMAIL_PROVIDER=resend
-RESEND_API_KEY=re_tu_api_key
-RESEND_FROM=onboarding@resend.dev
-```
-
-Solo llegará al email con el que te registraste en Resend. Para otros destinatarios necesitas verificar un dominio en resend.com/domains.
+5. `git pull`, `npm run build`, `pm2 restart ms-usuarios`
 
 Si el correo falla al restablecer contraseña, la API responde **503** (no 500) y el token no queda activo.
 

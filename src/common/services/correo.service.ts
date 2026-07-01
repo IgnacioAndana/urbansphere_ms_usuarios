@@ -1,13 +1,12 @@
 /**
  * Archivo: correo.service.ts
  * Ubicación: common/services
- * Contenido: envío de correos vía SMTP (Brevo/Gmail) o Resend
+ * Contenido: envío de correos vía Brevo SMTP
  */
 
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
-import { Resend } from 'resend';
 
 @Injectable()
 export class CorreoServicio {
@@ -55,88 +54,48 @@ export class CorreoServicio {
     texto: string;
     html: string;
   }): Promise<boolean> {
-    const proveedor = this.configServicio.get<'smtp' | 'resend'>('email.provider') ?? 'resend';
+    const smtp = this.configServicio.get<{ host: string; port: number; user: string; pass: string }>(
+      'email.smtp',
+    );
+    const remitenteEmail = this.configServicio.get<string>('email.from');
+    const remitenteNombre = this.configServicio.get<string>('email.fromName') || 'UrbanSphere';
+
+    if (!smtp?.user || !smtp.pass) {
+      this.logger.warn('BREVO_SMTP_USER o BREVO_SMTP_PASS no configurados: correo no enviado');
+      return false;
+    }
+
+    if (!remitenteEmail) {
+      this.logger.warn('MAIL_FROM no configurado: correo no enviado');
+      return false;
+    }
 
     try {
-      if (proveedor === 'smtp') {
-        return await this.enviarConSmtp(datos);
-      }
-      return await this.enviarConResend(datos);
+      const transportador = nodemailer.createTransport({
+        host: smtp.host,
+        port: smtp.port,
+        secure: smtp.port === 465,
+        requireTLS: smtp.port === 587,
+        auth: {
+          user: smtp.user,
+          pass: smtp.pass,
+        },
+      });
+
+      await transportador.sendMail({
+        from: `"${remitenteNombre}" <${remitenteEmail}>`,
+        to: datos.email,
+        subject: datos.asunto,
+        text: datos.texto,
+        html: datos.html,
+      });
+
+      this.logger.log(`Correo enviado vía Brevo SMTP a ${datos.email}`);
+      return true;
     } catch (error) {
       const mensaje = error instanceof Error ? error.message : 'Error desconocido';
       this.logger.error(`No se pudo enviar el correo a ${datos.email}: ${mensaje}`);
       return false;
     }
-  }
-
-  private async enviarConResend(datos: {
-    email: string;
-    asunto: string;
-    texto: string;
-    html: string;
-  }): Promise<boolean> {
-    const apiKey = this.configServicio.get<string>('email.resendApiKey');
-
-    if (!apiKey) {
-      this.logger.warn('RESEND_API_KEY no configurada: correo no enviado');
-      return false;
-    }
-
-    const resend = new Resend(apiKey);
-    const remitente = this.configServicio.get<string>('email.from') || 'onboarding@resend.dev';
-
-    const { data, error } = await resend.emails.send({
-      from: remitente,
-      to: datos.email,
-      subject: datos.asunto,
-      text: datos.texto,
-      html: datos.html,
-    });
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    this.logger.log(`Correo enviado vía Resend a ${datos.email} (id: ${data?.id ?? 'n/a'})`);
-    return true;
-  }
-
-  private async enviarConSmtp(datos: {
-    email: string;
-    asunto: string;
-    texto: string;
-    html: string;
-  }): Promise<boolean> {
-    const smtp = this.configServicio.get<{ host: string; port: number; user: string; pass: string }>(
-      'email.smtp',
-    );
-
-    if (!smtp?.host || !smtp.user || !smtp.pass) {
-      this.logger.warn('SMTP incompleto (SMTP_HOST/USER/PASS): correo no enviado');
-      return false;
-    }
-
-    const transportador = nodemailer.createTransport({
-      host: smtp.host,
-      port: smtp.port,
-      secure: smtp.port === 465,
-      auth: {
-        user: smtp.user,
-        pass: smtp.pass,
-      },
-    });
-
-    const remitente = this.configServicio.get<string>('email.from');
-
-    await transportador.sendMail({
-      from: remitente,
-      to: datos.email,
-      subject: datos.asunto,
-      text: datos.texto,
-      html: datos.html,
-    });
-
-    this.logger.log(`Correo enviado vía SMTP a ${datos.email}`);
-    return true;
   }
 }
