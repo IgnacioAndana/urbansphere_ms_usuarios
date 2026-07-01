@@ -386,20 +386,15 @@ curl -X GET http://localhost:3001/api/solicitudes-interes \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
-### Correo (Brevo SMTP)
-
-El MS envía correos vía **Brevo SMTP** (nodemailer).
+### Correo (Brevo API)
 
 1. Registro en https://www.brevo.com
 2. **Remitentes** → verifica tu email (ej. `nashogringo92@gmail.com`)
-3. **SMTP & API → Configuración SMTP** → copia login y contraseña
-4. En `.env` del servidor:
+3. **SMTP & API → Configuración de API** → genera clave `xkeysib-...`
+4. En `.env`:
 
 ```env
-BREVO_SMTP_HOST=smtp-relay.brevo.com
-BREVO_SMTP_PORT=587
-BREVO_SMTP_USER=b0814e001@smtp-brevo.com
-BREVO_SMTP_PASS=tu_clave_smtp
+BREVO_API_KEY=xkeysib-tu_api_key
 MAIL_FROM=nashogringo92@gmail.com
 MAIL_FROM_NAME=UrbanSphere
 FRONTEND_URL=http://13.222.88.101
@@ -407,7 +402,7 @@ FRONTEND_URL=http://13.222.88.101
 
 5. `git pull`, `npm run build`, `pm2 restart ms-usuarios`
 
-Si el correo falla al restablecer contraseña, la API responde **503** (no 500) y el token no queda activo.
+Si el correo falla al restablecer contraseña, la API responde **503** y el token no queda activo.
 
 ### PowerShell (Windows)
 

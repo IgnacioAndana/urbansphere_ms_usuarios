@@ -5,12 +5,7 @@ function trim(valor?: string): string {
 }
 
 export default registerAs('email', () => ({
-  smtp: {
-    host: trim(process.env.BREVO_SMTP_HOST) || 'smtp-relay.brevo.com',
-    port: parseInt(trim(process.env.BREVO_SMTP_PORT) || '587', 10),
-    user: trim(process.env.BREVO_SMTP_USER),
-    pass: trim(process.env.BREVO_SMTP_PASS),
-  },
+  apiKey: trim(process.env.BREVO_API_KEY),
   from: trim(process.env.MAIL_FROM),
   fromName: trim(process.env.MAIL_FROM_NAME) || 'UrbanSphere',
 }));

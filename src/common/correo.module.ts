@@ -1,7 +1,7 @@
 /**
  * Archivo: correo.module.ts
  * Ubicación: common
- * Contenido: servicio compartido de correo (Brevo SMTP)
+ * Contenido: servicio compartido de correo (Brevo API)
  */
 
 import { Global, Module } from '@nestjs/common';
