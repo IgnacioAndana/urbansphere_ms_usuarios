@@ -8,7 +8,11 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
-import { RONDAS_BCRYPT, NOMBRE_ROL_POR_DEFECTO } from '../../../common/constants/app.constants';
+import {
+  RONDAS_BCRYPT,
+  NOMBRE_ROL_POR_DEFECTO,
+  ROLES,
+} from '../../../common/constants/app.constants';
 import { ExcepcionNegocio } from '../../../common/exceptions/excepcion-negocio.exception';
 import { CrearUsuarioDto } from '../dto/crear-usuario.dto';
 import { ActualizarUsuarioDto } from '../dto/actualizar-usuario.dto';
@@ -16,6 +20,7 @@ import { RespuestaUsuarioDto } from '../dto/respuesta-usuario.dto';
 import { UsuarioEntidad } from '../entities/usuario.entity';
 import { UsuariosRepositorio } from '../repositories/usuarios.repository';
 import { RolesRepositorio } from '../../roles/repositories/roles.repository';
+import { CargaJwt } from '../../auth/interfaces/carga-jwt.interface';
 
 @Injectable()
 export class UsuariosServicio {
@@ -68,6 +73,29 @@ export class UsuariosServicio {
   async listarUsuarios(): Promise<RespuestaUsuarioDto[]> {
     const usuarios = await this.usuariosRepositorio.listarUsuarios();
     return usuarios.map((u) => this.mapearARespuesta(u));
+  }
+
+  async actualizarUsuarioAutorizado(
+    id: number,
+    dto: ActualizarUsuarioDto,
+    usuarioActual: CargaJwt,
+  ): Promise<RespuestaUsuarioDto> {
+    const esPropioPerfil = usuarioActual.sub === id;
+    const puedeEditarOtros =
+      usuarioActual.rol === ROLES.ADMIN || usuarioActual.rol === ROLES.AGENT;
+
+    if (!esPropioPerfil && !puedeEditarOtros) {
+      throw new ExcepcionNegocio(
+        'No tienes permisos para editar este usuario',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const dtoFiltrado = esPropioPerfil && !puedeEditarOtros
+      ? { nombre: dto.nombre, email: dto.email, contrasena: dto.contrasena }
+      : dto;
+
+    return this.actualizarUsuario(id, dtoFiltrado);
   }
 
   async actualizarUsuario(id: number, dto: ActualizarUsuarioDto): Promise<RespuestaUsuarioDto> {

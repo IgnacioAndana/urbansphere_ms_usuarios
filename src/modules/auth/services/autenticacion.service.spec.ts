@@ -14,6 +14,8 @@ import { AutenticacionServicio } from './autenticacion.service';
 import { UsuariosRepositorio } from '../../users/repositories/usuarios.repository';
 import { UsuariosServicio } from '../../users/services/usuarios.service';
 import { TokensRefrescoRepositorio } from '../repositories/tokens-refresco.repository';
+import { TokensRestablecimientoRepositorio } from '../repositories/tokens-restablecimiento.repository';
+import { CorreoServicio } from '../../../common/services/correo.service';
 
 jest.mock('bcrypt');
 
@@ -53,6 +55,22 @@ describe('AutenticacionServicio', () => {
             crearTokenRefresco: jest.fn(),
             buscarPorToken: jest.fn(),
             eliminarPorToken: jest.fn(),
+            eliminarPorUsuarioId: jest.fn(),
+          },
+        },
+        {
+          provide: TokensRestablecimientoRepositorio,
+          useValue: {
+            crearToken: jest.fn(),
+            buscarPorToken: jest.fn(),
+            invalidarPendientesPorUsuario: jest.fn(),
+            marcarComoUsado: jest.fn(),
+          },
+        },
+        {
+          provide: CorreoServicio,
+          useValue: {
+            enviarRestablecimientoContrasena: jest.fn(),
           },
         },
         { provide: JwtService, useValue: { sign: jest.fn().mockReturnValue('token-acceso') } },
@@ -60,7 +78,13 @@ describe('AutenticacionServicio', () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn((clave: string) =>
-              ({ 'jwt.accessExpiresIn': '15m', 'jwt.refreshExpiresIn': '7d' })[clave],
+              ({
+                'jwt.accessExpiresIn': '15m',
+                'jwt.refreshExpiresIn': '7d',
+                'app.passwordResetExpiresIn': '1h',
+                'app.frontendUrl': 'http://localhost:5173',
+                'app.passwordResetPath': '/restablecer-contrasena',
+              })[clave],
             ),
           },
         },

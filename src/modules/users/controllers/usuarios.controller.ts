@@ -9,6 +9,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   ParseIntPipe,
@@ -42,7 +43,7 @@ export class UsuariosControlador {
   @Post()
   @UseGuards(JwtOpcionalGuard)
   @ApiOperation({
-    summary: 'Registro público (rol user) o creación de usuario por admin',
+    summary: 'Registro público (sin JWT, rol user) o crear usuario (solo admin con JWT)',
   })
   @ApiResponse({ status: 201, type: RespuestaUsuarioDto })
   crearUsuario(
@@ -51,6 +52,9 @@ export class UsuariosControlador {
   ): Promise<RespuestaUsuarioDto> {
     if (usuarioActual?.rol === ROLES.ADMIN) {
       return this.usuariosServicio.crearUsuario(dto);
+    }
+    if (usuarioActual) {
+      throw new ForbiddenException('Solo admin puede crear usuarios con sesión iniciada');
     }
     return this.usuariosServicio.crearUsuarioRegistro(dto);
   }
@@ -76,16 +80,18 @@ export class UsuariosControlador {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(ROLES.ADMIN, ROLES.AGENT)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Actualizar usuario (admin, agent)' })
+  @ApiOperation({
+    summary: 'Actualizar usuario (propio perfil o admin/agent sobre otros)',
+  })
   @ApiResponse({ status: 200, type: RespuestaUsuarioDto })
   actualizarUsuario(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ActualizarUsuarioDto,
+    @UsuarioActual() usuarioActual: CargaJwt,
   ): Promise<RespuestaUsuarioDto> {
-    return this.usuariosServicio.actualizarUsuario(id, dto);
+    return this.usuariosServicio.actualizarUsuarioAutorizado(id, dto, usuarioActual);
   }
 
   @Delete(':id')

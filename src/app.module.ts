@@ -13,6 +13,8 @@ import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import rabbitmqConfig from './config/rabbitmq.config';
 import emailConfig from './config/email.config';
+import appConfig from './config/app.config';
+import { CorreoModule } from './common/correo.module';
 import { FiltroExcepcionesHttp } from './common/filters/filtro-excepciones-http.filter';
 import { FormatearFechasInterceptor } from './common/interceptors/formatear-fechas.interceptor';
 import { UsersModule } from './modules/users/users.module';
@@ -25,8 +27,9 @@ import { SemillaModule } from './seed/semilla.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, rabbitmqConfig, emailConfig],
+      load: [databaseConfig, jwtConfig, rabbitmqConfig, emailConfig, appConfig],
     }),
+    CorreoModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

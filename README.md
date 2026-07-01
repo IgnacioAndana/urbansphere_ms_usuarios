@@ -82,6 +82,7 @@ También puedes ejecutarlo desde **phpMyAdmin** o **MySQL Workbench** selecciona
 | `roles` | Roles fijos: admin, user, agent |
 | `usuarios` | Usuarios registrados |
 | `tokens_refresco` | Tokens de refresco JWT |
+| `tokens_restablecimiento` | Enlaces de recuperación de contraseña (un solo uso) |
 | `solicitudes_interes` | Formulario "Me interesa este proyecto" |
 
 Al primer arranque, el servicio ejecuta un **seed** que crea los 3 roles si aún no existen.
@@ -162,7 +163,7 @@ En los ejemplos protegidos, reemplaza `TU_TOKEN_ACCESO` y `TU_TOKEN_REFRESCO` po
 
 ### Usuarios
 
-#### POST `/api/usuarios` — Registrar usuario (sin auth)
+#### POST `/api/usuarios` — Registro público (sin JWT, siempre rol `user`)
 
 ```bash
 curl -X POST http://localhost:3001/api/usuarios \
@@ -170,12 +171,13 @@ curl -X POST http://localhost:3001/api/usuarios \
   -d "{\"nombre\":\"Juan Pérez\",\"email\":\"juan@example.com\",\"contrasena\":\"SecurePass123!\"}"
 ```
 
-Con rol específico (opcional):
+Crear usuario con rol (solo **admin** autenticado):
 
 ```bash
 curl -X POST http://localhost:3001/api/usuarios \
   -H "Content-Type: application/json" \
-  -d "{\"nombre\":\"María López\",\"email\":\"maria@example.com\",\"contrasena\":\"SecurePass123!\",\"rolId\":2}"
+  -H "Authorization: Bearer TU_TOKEN_ADMIN" \
+  -d "{\"nombre\":\"María López\",\"email\":\"maria@example.com\",\"contrasena\":\"SecurePass123!\",\"rolId\":3}"
 ```
 
 #### GET `/api/usuarios` — Listar usuarios (JWT)
@@ -194,11 +196,13 @@ curl -X GET http://localhost:3001/api/usuarios/1 \
 
 #### PATCH `/api/usuarios/:id` — Actualizar usuario (JWT)
 
+Cualquier rol puede editar **su propio** id (`nombre`, `email`, `contrasena`). Admin y agent pueden editar **cualquier** usuario (incluye `rolId`, `activo`).
+
 ```bash
 curl -X PATCH http://localhost:3001/api/usuarios/1 \
   -H "Authorization: Bearer TU_TOKEN_ACCESO" \
   -H "Content-Type: application/json" \
-  -d "{\"nombre\":\"Juan Pérez Actualizado\",\"activo\":true}"
+  -d "{\"nombre\":\"Juan Pérez Actualizado\"}"
 ```
 
 Actualizar contraseña:
@@ -210,11 +214,11 @@ curl -X PATCH http://localhost:3001/api/usuarios/1 \
   -d "{\"contrasena\":\"NuevaSecurePass123!\"}"
 ```
 
-#### DELETE `/api/usuarios/:id` — Eliminar usuario (JWT)
+#### DELETE `/api/usuarios/:id` — Eliminar usuario (JWT, solo admin)
 
 ```bash
 curl -X DELETE http://localhost:3001/api/usuarios/1 \
-  -H "Authorization: Bearer TU_TOKEN_ACCESO"
+  -H "Authorization: Bearer TU_TOKEN_ADMIN"
 ```
 
 ### Autenticación
@@ -266,17 +270,61 @@ curl -X GET http://localhost:3001/api/autenticacion/perfil \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
+#### POST `/api/autenticacion/solicitar-restablecimiento` — Validar email y enviar enlace
+
+Comprueba que el correo exista en la BD y envía un enlace **de un solo uso** (vía Resend).
+
+```bash
+curl -X POST http://localhost:3001/api/autenticacion/solicitar-restablecimiento \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"juan@example.com\"}"
+```
+
+Respuesta si existe: `{ "mensaje": "...", "email": "juan@example.com" }`  
+Si no existe: **404** — `No existe una cuenta activa con ese correo electrónico`
+
+#### POST `/api/autenticacion/validar-token-restablecimiento` — Validar enlace antes del formulario
+
+```bash
+curl -X POST http://localhost:3001/api/autenticacion/validar-token-restablecimiento \
+  -H "Content-Type: application/json" \
+  -d "{\"token\":\"TOKEN_DEL_CORREO\"}"
+```
+
+#### POST `/api/autenticacion/restablecer-contrasena` — Nueva contraseña (token un solo uso)
+
+```bash
+curl -X POST http://localhost:3001/api/autenticacion/restablecer-contrasena \
+  -H "Content-Type: application/json" \
+  -d "{\"token\":\"TOKEN_DEL_CORREO\",\"contrasena\":\"NuevaSecurePass123!\"}"
+```
+
+Variables `.env` del enlace:
+
+```env
+FRONTEND_URL=http://localhost:5173
+PASSWORD_RESET_PATH=/restablecer-contrasena
+PASSWORD_RESET_EXPIRES_IN=1h
+```
+
+El correo incluye: `{FRONTEND_URL}{PASSWORD_RESET_PATH}?token=...`
+
 ### Roles y permisos por rol
 
 Los permisos se controlan por **nombre de rol** en código (sin tablas `permisos` / `rol_permisos`).
 
-| Rol | ID | Capacidades en este MS |
-|-----|----|------------------------|
-| `admin` | 1 | Todo: CRUD usuarios, listar roles, ver solicitudes de interés |
-| `agent` | 3 | Igual que admin **excepto** crear y eliminar usuarios |
-| `user` | 2 | Registro público, login, perfil, enviar solicitud de interés; ver proyectos (MS Projects) |
+| Endpoint | admin | agent | user |
+|----------|-------|-------|------|
+| `POST /api/usuarios` (sin JWT) | Registro público → rol `user` | igual | igual |
+| `POST /api/usuarios` (con JWT) | Crear usuario (asignar rol) | ❌ | ❌ |
+| `GET /api/usuarios` | ✅ | ✅ | ❌ |
+| `GET /api/usuarios/:id` | ✅ | ✅ | ❌ |
+| `PATCH /api/usuarios/:id` | Cualquier usuario | Cualquier usuario | Solo **su propio** id |
+| `DELETE /api/usuarios/:id` | ✅ | ❌ | ❌ |
 
-> En MS Projects, el rol `user` solo debe poder **consultar** proyectos (GET). Eso se implementará en ese microservicio con el mismo criterio de roles del JWT.
+> Al editar **su propio perfil**, `user` solo puede cambiar `nombre`, `email` y `contrasena`. Admin y agent pueden editar cualquier usuario con todos los campos.
+
+> En MS Projects, el rol `user` solo debe poder **consultar** proyectos (GET).
 
 #### GET `/api/roles` — Listar roles (JWT admin o agent)
 
@@ -357,15 +405,18 @@ Invoke-RestMethod -Method Post -Uri "http://localhost:3001/api/autenticacion/ini
 
 | Método | Ruta | Descripción | Auth |
 |--------|------|-------------|------|
-| POST | `/api/usuarios` | Registro público (user) o crear usuario (admin) | Opcional |
+| POST | `/api/usuarios` | Registro público (sin JWT) o crear usuario (JWT admin) | No / JWT admin |
 | GET | `/api/usuarios` | Listar usuarios | JWT admin, agent |
 | GET | `/api/usuarios/:id` | Obtener usuario por ID | JWT admin, agent |
-| PATCH | `/api/usuarios/:id` | Actualizar usuario | JWT admin, agent |
+| PATCH | `/api/usuarios/:id` | Actualizar perfil propio o cualquier usuario (admin/agent) | JWT |
 | DELETE | `/api/usuarios/:id` | Eliminar usuario | JWT admin |
 | POST | `/api/autenticacion/iniciar-sesion` | Iniciar sesión | No |
 | POST | `/api/autenticacion/refrescar` | Renovar tokens | No |
 | POST | `/api/autenticacion/cerrar-sesion` | Cerrar sesión | No |
 | GET | `/api/autenticacion/perfil` | Perfil del usuario autenticado | JWT |
+| POST | `/api/autenticacion/solicitar-restablecimiento` | Validar email y enviar enlace | No |
+| POST | `/api/autenticacion/validar-token-restablecimiento` | Comprobar token vigente | No |
+| POST | `/api/autenticacion/restablecer-contrasena` | Nueva contraseña (token único) | No |
 | GET | `/api/roles` | Listar roles | JWT admin, agent |
 | POST | `/api/solicitudes-interes` | Me interesa este proyecto | Opcional |
 | GET | `/api/solicitudes-interes` | Listar solicitudes | JWT admin, agent |
@@ -403,6 +454,7 @@ Controller → Service → Repository → Entity → MySQL (porsusde_urbansphere
 | `usuarios` | `nombre`, `email`, `hash_contrasena`, `rol_id`, `activo`, `creado_en`, `actualizado_en` |
 | `roles` | `nombre`, `descripcion` |
 | `solicitudes_interes` | `proyecto_id`, `nombre`, `email`, `usuario_id`, `creado_en` |
+| `tokens_restablecimiento` | `usuario_id`, `token`, `expira_en`, `usado`, `creado_en` |
 | `tokens_refresco` | `usuario_id`, `token`, `expira_en` |
 
 Rutas, DTOs, métodos de servicio/repositorio y respuestas JSON están en **español**, alineados con el esquema de BD.

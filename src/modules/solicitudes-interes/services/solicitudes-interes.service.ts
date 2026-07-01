@@ -9,7 +9,7 @@ import { CrearSolicitudInteresDto } from '../dto/crear-solicitud-interes.dto';
 import { RespuestaSolicitudInteresDto } from '../dto/respuesta-solicitud-interes.dto';
 import { SolicitudInteresEntidad } from '../entities/solicitud-interes.entity';
 import { SolicitudesInteresRepositorio } from '../repositories/solicitudes-interes.repository';
-import { CorreoServicio } from './correo.service';
+import { CorreoServicio } from '../../../common/services/correo.service';
 import { CargaJwt } from '../../auth/interfaces/carga-jwt.interface';
 
 @Injectable()

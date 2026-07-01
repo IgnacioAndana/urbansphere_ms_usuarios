@@ -15,6 +15,11 @@ import {
 import { UsuarioActual } from '../../../common/decorators/usuario-actual.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { IniciarSesionDto, RefrescarTokenDto } from '../dto/iniciar-sesion.dto';
+import {
+  RestablecerContrasenaDto,
+  SolicitarRestablecimientoDto,
+  ValidarTokenRestablecimientoDto,
+} from '../dto/restablecer-contrasena.dto';
 import { CargaJwt } from '../interfaces/carga-jwt.interface';
 import { AutenticacionServicio } from '../services/autenticacion.service';
 import { UsuariosServicio } from '../../users/services/usuarios.service';
@@ -57,5 +62,27 @@ export class AutenticacionControlador {
   @ApiResponse({ status: 200, type: RespuestaUsuarioDto })
   obtenerPerfil(@UsuarioActual() usuario: CargaJwt): Promise<RespuestaUsuarioDto> {
     return this.usuariosServicio.buscarUsuarioPorId(usuario.sub);
+  }
+
+  @Post('solicitar-restablecimiento')
+  @ApiOperation({
+    summary: 'Validar email y enviar enlace de restablecimiento de contraseña',
+  })
+  @ApiResponse({ status: 200, description: 'Correo encontrado y enlace enviado' })
+  @ApiResponse({ status: 404, description: 'No existe cuenta con ese email' })
+  solicitarRestablecimiento(@Body() dto: SolicitarRestablecimientoDto) {
+    return this.autenticacionServicio.solicitarRestablecimiento(dto);
+  }
+
+  @Post('validar-token-restablecimiento')
+  @ApiOperation({ summary: 'Validar si el token de restablecimiento sigue vigente' })
+  validarTokenRestablecimiento(@Body() dto: ValidarTokenRestablecimientoDto) {
+    return this.autenticacionServicio.validarTokenRestablecimiento(dto);
+  }
+
+  @Post('restablecer-contrasena')
+  @ApiOperation({ summary: 'Restablecer contraseña con token de un solo uso' })
+  restablecerContrasena(@Body() dto: RestablecerContrasenaDto) {
+    return this.autenticacionServicio.restablecerContrasena(dto);
   }
 }
