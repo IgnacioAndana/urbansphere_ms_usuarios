@@ -386,33 +386,38 @@ curl -X GET http://localhost:3001/api/solicitudes-interes \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
-### Correo (Resend)
+### Correo (SMTP / Brevo recomendado)
 
-El MS envía correos con el SDK de **[Resend](https://resend.com)**. Solo necesitas estas variables en `.env`:
+**Resend con `onboarding@resend.dev` solo permite enviar a tu propio email** (el de la cuenta). Para usuarios como `juan@example.com` usa **Brevo** (gratis, ~300 emails/día a cualquier destinatario).
+
+#### Brevo (recomendado para el proyecto)
+
+1. Registro en https://www.brevo.com
+2. SMTP & API → Claves SMTP → generar clave
+3. En `.env` del servidor:
 
 ```env
+EMAIL_PROVIDER=smtp
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=tu_email@duocuc.cl
+SMTP_PASS=xsmtpsib-tu_clave_smtp
+MAIL_FROM=tu_email@duocuc.cl
+```
+
+4. `pm2 restart ms-usuarios`
+
+#### Resend (solo pruebas contigo mismo)
+
+```env
+EMAIL_PROVIDER=resend
 RESEND_API_KEY=re_tu_api_key
 RESEND_FROM=onboarding@resend.dev
 ```
 
-- Si **`RESEND_API_KEY` está vacía**, la solicitud se guarda en BD pero **no** se envía correo.
-- No hace falta `EMAIL_ENABLED` ni variables SMTP.
-- Plan free: **100 emails/día** a bandejas reales.
-- Con `onboarding@resend.dev` solo puedes enviar **al email con el que te registraste** en Resend. Para otros destinatarios, verifica un dominio en Resend.
+Solo llegará al email con el que te registraste en Resend. Para otros destinatarios necesitas verificar un dominio en resend.com/domains.
 
-Reinicia el servicio tras editar `.env`:
-
-```bash
-pm2 restart ms-usuarios
-```
-
-Prueba:
-
-```bash
-curl -X POST http://localhost:3001/api/solicitudes-interes \
-  -H "Content-Type: application/json" \
-  -d "{\"proyectoId\":1,\"nombre\":\"Juan Pérez\",\"email\":\"i.andana@duocuc.cl\"}"
-```
+Si el correo falla al restablecer contraseña, la API responde **503** (no 500) y el token no queda activo.
 
 ### PowerShell (Windows)
 

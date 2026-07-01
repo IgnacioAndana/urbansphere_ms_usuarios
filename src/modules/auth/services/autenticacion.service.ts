@@ -125,11 +125,19 @@ export class AutenticacionServicio {
     const ruta = this.configServicio.get<string>('app.passwordResetPath') || '/restablecer-contrasena';
     const enlace = `${frontendUrl}${ruta}?token=${token}`;
 
-    await this.correoServicio.enviarRestablecimientoContrasena({
+    const correoEnviado = await this.correoServicio.enviarRestablecimientoContrasena({
       nombre: usuario.nombre,
       email: usuario.email,
       enlace,
     });
+
+    if (!correoEnviado) {
+      await this.tokensRestablecimientoRepositorio.eliminarPorToken(token);
+      throw new ExcepcionNegocio(
+        'No se pudo enviar el correo de restablecimiento. Verifica la configuración SMTP o usa Brevo.',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
 
     return {
       mensaje: 'Se envió un enlace de restablecimiento a tu correo electrónico',

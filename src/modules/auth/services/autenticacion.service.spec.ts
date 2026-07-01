@@ -70,7 +70,7 @@ describe('AutenticacionServicio', () => {
         {
           provide: CorreoServicio,
           useValue: {
-            enviarRestablecimientoContrasena: jest.fn(),
+            enviarRestablecimientoContrasena: jest.fn().mockResolvedValue(true),
           },
         },
         { provide: JwtService, useValue: { sign: jest.fn().mockReturnValue('token-acceso') } },

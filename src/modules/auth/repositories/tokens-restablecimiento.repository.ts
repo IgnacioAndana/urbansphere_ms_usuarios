@@ -34,6 +34,10 @@ export class TokensRestablecimientoRepositorio {
     await this.repositorio.update({ usuarioId, usado: false }, { usado: true });
   }
 
+  async eliminarPorToken(token: string): Promise<void> {
+    await this.repositorio.delete({ token });
+  }
+
   async marcarComoUsado(id: number): Promise<void> {
     await this.repositorio.update(id, { usado: true });
   }
