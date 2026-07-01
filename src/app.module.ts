@@ -17,6 +17,7 @@ import appConfig from './config/app.config';
 import { CorreoModule } from './common/correo.module';
 import { FiltroExcepcionesHttp } from './common/filters/filtro-excepciones-http.filter';
 import { FormatearFechasInterceptor } from './common/interceptors/formatear-fechas.interceptor';
+import { LoggingHttpInterceptor } from './common/interceptors/logging-http.interceptor';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RolesModule } from './modules/roles/roles.module';
@@ -51,6 +52,10 @@ import { SemillaModule } from './seed/semilla.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: FormatearFechasInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingHttpInterceptor,
     },
   ],
 })

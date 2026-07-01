@@ -104,6 +104,31 @@ DB_SYNCHRONIZE=false
 DB_LOGGING=false
 ```
 
+### Logs HTTP en consola (PM2)
+
+Cada petición se registra automáticamente (activado por defecto):
+
+```text
+[HTTP] → POST /api/autenticacion/iniciar-sesion
+[HTTP] ← POST /api/autenticacion/iniciar-sesion 201 45ms
+[HTTP] → GET /api/autenticacion/perfil [juan@example.com]
+[HTTP] ← GET /api/autenticacion/perfil 200 12ms [juan@example.com]
+```
+
+Ver en el servidor:
+
+```bash
+pm2 logs ms-usuarios
+```
+
+Desactivar si hace falta:
+
+```env
+HTTP_LOGGING=false
+```
+
+No registra Swagger (`/api/docs`). No imprime bodies ni contraseñas.
+
 ---
 
 ## Cómo levantar el servicio
