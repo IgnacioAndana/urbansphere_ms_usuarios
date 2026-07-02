@@ -8,6 +8,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MailtrapClient } from 'mailtrap';
 import {
+  configurarPlantillasCorreo,
   plantillaRestablecimientoContrasena,
   plantillaSolicitudInteres,
 } from '../correo/plantillas/plantilla-correo.util';
@@ -34,6 +35,12 @@ export class CorreoServicio implements OnModuleInit {
       this.logger.log(`Remitente: ${remitente}`);
     } else {
       this.logger.warn('MAIL_FROM no configurado');
+    }
+
+    const logoUrl = this.configServicio.get<string>('email.logoUrl');
+    configurarPlantillasCorreo({ logoUrl });
+    if (logoUrl) {
+      this.logger.log(`Logo correo: ${logoUrl}`);
     }
   }
 

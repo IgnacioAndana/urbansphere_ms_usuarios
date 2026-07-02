@@ -8,4 +8,5 @@ export default registerAs('email', () => ({
   token: trim(process.env.MAILTRAP_API_TOKEN),
   from: trim(process.env.MAIL_FROM),
   fromName: trim(process.env.MAIL_FROM_NAME) || 'UrbanSphere',
+  logoUrl: trim(process.env.EMAIL_LOGO_URL),
 }));
