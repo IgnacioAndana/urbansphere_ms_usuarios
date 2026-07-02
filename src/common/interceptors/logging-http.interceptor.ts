@@ -19,7 +19,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { CargaJwt } from '../../modules/auth/interfaces/carga-jwt.interface';
 
-const RUTAS_IGNORADAS = ['/api/docs', '/api/docs-json', '/favicon.ico'];
+const RUTAS_IGNORADAS = ['/docs', '/docs-json', '/favicon.ico'];
 
 @Injectable()
 export class LoggingHttpInterceptor implements NestInterceptor {

@@ -1,7 +1,7 @@
 /**
  * Archivo: solicitudes-interes.controller.ts
  * Ubicación: modules/solicitudes-interes/controllers
- * Endpoints: POST/GET /api/solicitudes-interes
+ * Endpoints: POST/GET /solicitudes-interes
  */
 
 import { Body, Controller, Get, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';

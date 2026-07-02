@@ -2,7 +2,7 @@
  * Archivo: crear-solicitud-interes.dto.ts
  * Ubicación: modules/solicitudes-interes/dto
  * Tipo: DTO de entrada
- * Uso: POST /api/solicitudes-interes
+ * Uso: POST /solicitudes-interes
  */
 
 import { ApiProperty } from '@nestjs/swagger';

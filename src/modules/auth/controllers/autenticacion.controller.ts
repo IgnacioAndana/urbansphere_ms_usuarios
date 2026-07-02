@@ -2,7 +2,7 @@
  * Archivo: autenticacion.controller.ts
  * Ubicación: modules/auth/controllers
  * Tipo: Controlador REST
- * Endpoints: POST /api/autenticacion/iniciar-sesion, /refrescar, /cerrar-sesion — GET /api/autenticacion/perfil
+ * Endpoints: POST /autenticacion/iniciar-sesion, /refrescar, /cerrar-sesion — GET /autenticacion/perfil
  */
 
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';

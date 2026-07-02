@@ -19,7 +19,6 @@ describe('Autenticación (e2e)', () => {
     }).compile();
 
     app = modulo.createNestApplication();
-    app.setGlobalPrefix('api');
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
     );
@@ -36,9 +35,9 @@ describe('Autenticación (e2e)', () => {
     contrasena: 'SecurePass123!',
   };
 
-  it('POST /api/usuarios — debe registrar usuario', () => {
+  it('POST /usuarios — debe registrar usuario', () => {
     return request(app.getHttpServer())
-      .post('/api/usuarios')
+      .post('/usuarios')
       .send(usuarioPrueba)
       .expect(201)
       .expect((res) => {
@@ -47,9 +46,9 @@ describe('Autenticación (e2e)', () => {
       });
   });
 
-  it('POST /api/autenticacion/iniciar-sesion — login exitoso', () => {
+  it('POST /autenticacion/iniciar-sesion — login exitoso', () => {
     return request(app.getHttpServer())
-      .post('/api/autenticacion/iniciar-sesion')
+      .post('/autenticacion/iniciar-sesion')
       .send({ email: usuarioPrueba.email, contrasena: usuarioPrueba.contrasena })
       .expect(201)
       .expect((res) => {
@@ -58,9 +57,9 @@ describe('Autenticación (e2e)', () => {
       });
   });
 
-  it('POST /api/autenticacion/iniciar-sesion — login fallido', () => {
+  it('POST /autenticacion/iniciar-sesion — login fallido', () => {
     return request(app.getHttpServer())
-      .post('/api/autenticacion/iniciar-sesion')
+      .post('/autenticacion/iniciar-sesion')
       .send({ email: usuarioPrueba.email, contrasena: 'ContrasenaIncorrecta!' })
       .expect(401);
   });

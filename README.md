@@ -5,9 +5,11 @@ Microservicio de usuarios de la plataforma inmobiliaria **UrbanSphere**. Gestion
 | Dato | Valor |
 |------|-------|
 | Puerto por defecto | `3001` |
-| Prefijo API | `/api` |
-| Swagger | `/api/docs` |
+| Prefijo API | *(ninguno — rutas en raíz)* |
+| Swagger | `/docs` |
 | Esquema MySQL | `porsusde_urbansphere` (compartido con MS Projects y MS AI) |
+
+**Integración con el BFF:** este microservicio expone rutas en la raíz (`/usuarios`, `/autenticacion/...`, etc.), sin prefijo `/api`. El BFF (subdominio público) reenvía al puerto interno `3001` con la misma ruta. El front solo habla con el BFF.
 
 ---
 
@@ -110,10 +112,10 @@ DB_LOGGING=false
 Cada petición se registra automáticamente (activado por defecto):
 
 ```text
-[HTTP] → POST /api/autenticacion/iniciar-sesion
-[HTTP] ← POST /api/autenticacion/iniciar-sesion 201 45ms
-[HTTP] → GET /api/autenticacion/perfil [juan@example.com]
-[HTTP] ← GET /api/autenticacion/perfil 200 12ms [juan@example.com]
+[HTTP] → POST /autenticacion/iniciar-sesion
+[HTTP] ← POST /autenticacion/iniciar-sesion 201 45ms
+[HTTP] → GET /autenticacion/perfil [juan@example.com]
+[HTTP] ← GET /autenticacion/perfil 200 12ms [juan@example.com]
 ```
 
 Ver en el servidor:
@@ -128,7 +130,7 @@ Desactivar si hace falta:
 HTTP_LOGGING=false
 ```
 
-No registra Swagger (`/api/docs`). No imprime bodies ni contraseñas.
+No registra Swagger (`/docs`). No imprime bodies ni contraseñas.
 
 ---
 
@@ -144,7 +146,7 @@ Salida esperada:
 
 ```text
 MS Users running on http://localhost:3001
-Swagger docs: http://localhost:3001/api/docs
+Swagger docs: http://localhost:3001/docs
 ```
 
 ### Producción
@@ -161,7 +163,7 @@ npm run start:prod
 Abre Swagger en el navegador:
 
 ```text
-http://localhost:3001/api/docs
+http://localhost:3001/docs
 ```
 
 ---
@@ -171,7 +173,7 @@ http://localhost:3001/api/docs
 Base URL del servicio:
 
 ```text
-http://localhost:3001/api
+http://localhost:3001
 ```
 
 Flujo recomendado: **registrar** → **iniciar sesión** → copiar `tokenAcceso` y `tokenRefresco` → probar el resto.
@@ -180,10 +182,10 @@ En los ejemplos protegidos, reemplaza `TU_TOKEN_ACCESO` y `TU_TOKEN_REFRESCO` po
 
 ### Usuarios
 
-#### POST `/api/usuarios` — Registro público (sin JWT, siempre rol `user`)
+#### POST `/usuarios` — Registro público (sin JWT, siempre rol `user`)
 
 ```bash
-curl -X POST http://localhost:3001/api/usuarios \
+curl -X POST http://localhost:3001/usuarios \
   -H "Content-Type: application/json" \
   -d "{\"nombre\":\"Juan Pérez\",\"email\":\"juan@example.com\",\"contrasena\":\"SecurePass123!\"}"
 ```
@@ -191,32 +193,32 @@ curl -X POST http://localhost:3001/api/usuarios \
 Crear usuario con rol (solo **admin** autenticado):
 
 ```bash
-curl -X POST http://localhost:3001/api/usuarios \
+curl -X POST http://localhost:3001/usuarios \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer TU_TOKEN_ADMIN" \
   -d "{\"nombre\":\"María López\",\"email\":\"maria@example.com\",\"contrasena\":\"SecurePass123!\",\"rolId\":3}"
 ```
 
-#### GET `/api/usuarios` — Listar usuarios (JWT)
+#### GET `/usuarios` — Listar usuarios (JWT)
 
 ```bash
-curl -X GET http://localhost:3001/api/usuarios \
+curl -X GET http://localhost:3001/usuarios \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
-#### GET `/api/usuarios/:id` — Obtener usuario por ID (JWT)
+#### GET `/usuarios/:id` — Obtener usuario por ID (JWT)
 
 ```bash
-curl -X GET http://localhost:3001/api/usuarios/1 \
+curl -X GET http://localhost:3001/usuarios/1 \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
-#### PATCH `/api/usuarios/:id` — Actualizar usuario (JWT)
+#### PATCH `/usuarios/:id` — Actualizar usuario (JWT)
 
 Cualquier rol puede editar **su propio** id (`nombre`, `email`, `contrasena`). Admin y agent pueden editar **cualquier** usuario (incluye `rolId`, `activo`).
 
 ```bash
-curl -X PATCH http://localhost:3001/api/usuarios/1 \
+curl -X PATCH http://localhost:3001/usuarios/1 \
   -H "Authorization: Bearer TU_TOKEN_ACCESO" \
   -H "Content-Type: application/json" \
   -d "{\"nombre\":\"Juan Pérez Actualizado\"}"
@@ -225,25 +227,25 @@ curl -X PATCH http://localhost:3001/api/usuarios/1 \
 Actualizar contraseña:
 
 ```bash
-curl -X PATCH http://localhost:3001/api/usuarios/1 \
+curl -X PATCH http://localhost:3001/usuarios/1 \
   -H "Authorization: Bearer TU_TOKEN_ACCESO" \
   -H "Content-Type: application/json" \
   -d "{\"contrasena\":\"NuevaSecurePass123!\"}"
 ```
 
-#### DELETE `/api/usuarios/:id` — Eliminar usuario (JWT, solo admin)
+#### DELETE `/usuarios/:id` — Eliminar usuario (JWT, solo admin)
 
 ```bash
-curl -X DELETE http://localhost:3001/api/usuarios/1 \
+curl -X DELETE http://localhost:3001/usuarios/1 \
   -H "Authorization: Bearer TU_TOKEN_ADMIN"
 ```
 
 ### Autenticación
 
-#### POST `/api/autenticacion/iniciar-sesion` — Iniciar sesión (sin auth)
+#### POST `/autenticacion/iniciar-sesion` — Iniciar sesión (sin auth)
 
 ```bash
-curl -X POST http://localhost:3001/api/autenticacion/iniciar-sesion \
+curl -X POST http://localhost:3001/autenticacion/iniciar-sesion \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"juan@example.com\",\"contrasena\":\"SecurePass123!\"}"
 ```
@@ -264,35 +266,35 @@ Respuesta esperada (fechas en formato `dd-mm-yyyy HH:mm:ss`):
 }
 ```
 
-#### POST `/api/autenticacion/refrescar` — Renovar tokens (sin auth)
+#### POST `/autenticacion/refrescar` — Renovar tokens (sin auth)
 
 ```bash
-curl -X POST http://localhost:3001/api/autenticacion/refrescar \
+curl -X POST http://localhost:3001/autenticacion/refrescar \
   -H "Content-Type: application/json" \
   -d "{\"tokenRefresco\":\"TU_TOKEN_REFRESCO\"}"
 ```
 
-#### POST `/api/autenticacion/cerrar-sesion` — Cerrar sesión (sin auth)
+#### POST `/autenticacion/cerrar-sesion` — Cerrar sesión (sin auth)
 
 ```bash
-curl -X POST http://localhost:3001/api/autenticacion/cerrar-sesion \
+curl -X POST http://localhost:3001/autenticacion/cerrar-sesion \
   -H "Content-Type: application/json" \
   -d "{\"tokenRefresco\":\"TU_TOKEN_REFRESCO\"}"
 ```
 
-#### GET `/api/autenticacion/perfil` — Perfil del usuario autenticado (JWT)
+#### GET `/autenticacion/perfil` — Perfil del usuario autenticado (JWT)
 
 ```bash
-curl -X GET http://localhost:3001/api/autenticacion/perfil \
+curl -X GET http://localhost:3001/autenticacion/perfil \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
-#### POST `/api/autenticacion/solicitar-restablecimiento` — Validar email y enviar enlace
+#### POST `/autenticacion/solicitar-restablecimiento` — Validar email y enviar enlace
 
 Comprueba que el correo exista en la BD y envía un enlace **de un solo uso** (vía Mailtrap).
 
 ```bash
-curl -X POST http://localhost:3001/api/autenticacion/solicitar-restablecimiento \
+curl -X POST http://localhost:3001/autenticacion/solicitar-restablecimiento \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"juan@example.com\"}"
 ```
@@ -300,18 +302,18 @@ curl -X POST http://localhost:3001/api/autenticacion/solicitar-restablecimiento 
 Respuesta si existe: `{ "mensaje": "...", "email": "juan@example.com" }`  
 Si no existe: **404** — `No existe una cuenta activa con ese correo electrónico`
 
-#### POST `/api/autenticacion/validar-token-restablecimiento` — Validar enlace antes del formulario
+#### POST `/autenticacion/validar-token-restablecimiento` — Validar enlace antes del formulario
 
 ```bash
-curl -X POST http://localhost:3001/api/autenticacion/validar-token-restablecimiento \
+curl -X POST http://localhost:3001/autenticacion/validar-token-restablecimiento \
   -H "Content-Type: application/json" \
   -d "{\"token\":\"TOKEN_DEL_CORREO\"}"
 ```
 
-#### POST `/api/autenticacion/restablecer-contrasena` — Nueva contraseña (token un solo uso)
+#### POST `/autenticacion/restablecer-contrasena` — Nueva contraseña (token un solo uso)
 
 ```bash
-curl -X POST http://localhost:3001/api/autenticacion/restablecer-contrasena \
+curl -X POST http://localhost:3001/autenticacion/restablecer-contrasena \
   -H "Content-Type: application/json" \
   -d "{\"token\":\"TOKEN_DEL_CORREO\",\"contrasena\":\"NuevaSecurePass123!\"}"
 ```
@@ -332,21 +334,21 @@ Los permisos se controlan por **nombre de rol** en código (sin tablas `permisos
 
 | Endpoint | admin | agent | user |
 |----------|-------|-------|------|
-| `POST /api/usuarios` (sin JWT) | Registro público → rol `user` | igual | igual |
-| `POST /api/usuarios` (con JWT) | Crear usuario (asignar rol) | ❌ | ❌ |
-| `GET /api/usuarios` | ✅ | ✅ | ❌ |
-| `GET /api/usuarios/:id` | ✅ | ✅ | ❌ |
-| `PATCH /api/usuarios/:id` | Cualquier usuario | Cualquier usuario | Solo **su propio** id |
-| `DELETE /api/usuarios/:id` | ✅ | ❌ | ❌ |
+| `POST /usuarios` (sin JWT) | Registro público → rol `user` | igual | igual |
+| `POST /usuarios` (con JWT) | Crear usuario (asignar rol) | ❌ | ❌ |
+| `GET /usuarios` | ✅ | ✅ | ❌ |
+| `GET /usuarios/:id` | ✅ | ✅ | ❌ |
+| `PATCH /usuarios/:id` | Cualquier usuario | Cualquier usuario | Solo **su propio** id |
+| `DELETE /usuarios/:id` | ✅ | ❌ | ❌ |
 
 > Al editar **su propio perfil**, `user` solo puede cambiar `nombre`, `email` y `contrasena`. Admin y agent pueden editar cualquier usuario con todos los campos.
 
 > En MS Projects, el rol `user` solo debe poder **consultar** proyectos (GET).
 
-#### GET `/api/roles` — Listar roles (JWT admin o agent)
+#### GET `/roles` — Listar roles (JWT admin o agent)
 
 ```bash
-curl -X GET http://localhost:3001/api/roles \
+curl -X GET http://localhost:3001/roles \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
@@ -354,10 +356,10 @@ curl -X GET http://localhost:3001/api/roles \
 
 Endpoint para el formulario del frontend. **Público** (sin login) o con JWT (usa el email de la sesión).
 
-#### POST `/api/solicitudes-interes` — Enviar solicitud
+#### POST `/solicitudes-interes` — Enviar solicitud
 
 ```bash
-curl -X POST http://localhost:3001/api/solicitudes-interes \
+curl -X POST http://localhost:3001/solicitudes-interes \
   -H "Content-Type: application/json" \
   -d "{\"proyectoId\":1,\"nombre\":\"Juan Pérez\",\"email\":\"juan@example.com\"}"
 ```
@@ -365,16 +367,16 @@ curl -X POST http://localhost:3001/api/solicitudes-interes \
 Con sesión activa (el email del body se ignora y se usa el de la sesión):
 
 ```bash
-curl -X POST http://localhost:3001/api/solicitudes-interes \
+curl -X POST http://localhost:3001/solicitudes-interes \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer TU_TOKEN_ACCESO" \
   -d "{\"proyectoId\":1,\"nombre\":\"Juan Pérez\",\"email\":\"juan@example.com\"}"
 ```
 
-#### GET `/api/solicitudes-interes` — Listar todas (JWT admin o agent)
+#### GET `/solicitudes-interes` — Listar todas (JWT admin o agent)
 
 ```bash
-curl -X GET http://localhost:3001/api/solicitudes-interes \
+curl -X GET http://localhost:3001/solicitudes-interes \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
@@ -382,42 +384,42 @@ curl -X GET http://localhost:3001/api/solicitudes-interes \
 
 Requiere **JWT**. Distinto de "Me interesa": solo guarda `usuario_id` + `proyecto_id` (FK a `proyectos.id`) para el ícono de corazón.
 
-#### GET `/api/favoritos/ids` — IDs favoritos del usuario (para pintar corazones)
+#### GET `/favoritos/ids` — IDs favoritos del usuario (para pintar corazones)
 
 ```bash
-curl -X GET http://localhost:3001/api/favoritos/ids \
+curl -X GET http://localhost:3001/favoritos/ids \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
 Respuesta: `{ "proyectoIds": [12, 34] }`
 
-#### GET `/api/favoritos/proyecto/:proyectoId` — ¿Está en favoritos?
+#### GET `/favoritos/proyecto/:proyectoId` — ¿Está en favoritos?
 
 ```bash
-curl -X GET http://localhost:3001/api/favoritos/proyecto/12 \
+curl -X GET http://localhost:3001/favoritos/proyecto/12 \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
-#### POST `/api/favoritos` — Agregar favorito
+#### POST `/favoritos` — Agregar favorito
 
 ```bash
-curl -X POST http://localhost:3001/api/favoritos \
+curl -X POST http://localhost:3001/favoritos \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer TU_TOKEN_ACCESO" \
   -d "{\"proyectoId\":12}"
 ```
 
-#### DELETE `/api/favoritos/:proyectoId` — Quitar favorito
+#### DELETE `/favoritos/:proyectoId` — Quitar favorito
 
 ```bash
-curl -X DELETE http://localhost:3001/api/favoritos/12 \
+curl -X DELETE http://localhost:3001/favoritos/12 \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
-#### GET `/api/favoritos` — Listar mis favoritos
+#### GET `/favoritos` — Listar mis favoritos
 
 ```bash
-curl -X GET http://localhost:3001/api/favoritos \
+curl -X GET http://localhost:3001/favoritos \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
@@ -452,7 +454,7 @@ Si el correo falla al restablecer contraseña, la API responde **503** y el toke
 Si usas PowerShell nativo, puedes probar así:
 
 ```powershell
-Invoke-RestMethod -Method Post -Uri "http://localhost:3001/api/autenticacion/iniciar-sesion" `
+Invoke-RestMethod -Method Post -Uri "http://localhost:3001/autenticacion/iniciar-sesion" `
   -ContentType "application/json" `
   -Body '{"email":"juan@example.com","contrasena":"SecurePass123!"}'
 ```
@@ -463,27 +465,27 @@ Invoke-RestMethod -Method Post -Uri "http://localhost:3001/api/autenticacion/ini
 
 | Método | Ruta | Descripción | Auth |
 |--------|------|-------------|------|
-| POST | `/api/usuarios` | Registro público (sin JWT) o crear usuario (JWT admin) | No / JWT admin |
-| GET | `/api/usuarios` | Listar usuarios | JWT admin, agent |
-| GET | `/api/usuarios/:id` | Obtener usuario por ID | JWT admin, agent |
-| PATCH | `/api/usuarios/:id` | Actualizar perfil propio o cualquier usuario (admin/agent) | JWT |
-| DELETE | `/api/usuarios/:id` | Eliminar usuario | JWT admin |
-| POST | `/api/autenticacion/iniciar-sesion` | Iniciar sesión | No |
-| POST | `/api/autenticacion/refrescar` | Renovar tokens | No |
-| POST | `/api/autenticacion/cerrar-sesion` | Cerrar sesión | No |
-| GET | `/api/autenticacion/perfil` | Perfil del usuario autenticado | JWT |
-| POST | `/api/autenticacion/solicitar-restablecimiento` | Validar email y enviar enlace | No |
-| POST | `/api/autenticacion/validar-token-restablecimiento` | Comprobar token vigente | No |
-| POST | `/api/autenticacion/restablecer-contrasena` | Nueva contraseña (token único) | No |
-| GET | `/api/roles` | Listar roles | JWT admin, agent |
-| POST | `/api/solicitudes-interes` | Me interesa este proyecto | Opcional |
-| GET | `/api/solicitudes-interes` | Listar solicitudes | JWT admin, agent |
-| GET | `/api/solicitudes-interes/proyecto/:proyectoId` | Solicitudes por proyecto | JWT admin, agent |
-| GET | `/api/favoritos/ids` | IDs de proyectos favoritos del usuario | JWT |
-| GET | `/api/favoritos/proyecto/:proyectoId` | Comprobar si es favorito | JWT |
-| GET | `/api/favoritos` | Listar mis favoritos | JWT |
-| POST | `/api/favoritos` | Marcar proyecto favorito | JWT |
-| DELETE | `/api/favoritos/:proyectoId` | Quitar de favoritos | JWT |
+| POST | `/usuarios` | Registro público (sin JWT) o crear usuario (JWT admin) | No / JWT admin |
+| GET | `/usuarios` | Listar usuarios | JWT admin, agent |
+| GET | `/usuarios/:id` | Obtener usuario por ID | JWT admin, agent |
+| PATCH | `/usuarios/:id` | Actualizar perfil propio o cualquier usuario (admin/agent) | JWT |
+| DELETE | `/usuarios/:id` | Eliminar usuario | JWT admin |
+| POST | `/autenticacion/iniciar-sesion` | Iniciar sesión | No |
+| POST | `/autenticacion/refrescar` | Renovar tokens | No |
+| POST | `/autenticacion/cerrar-sesion` | Cerrar sesión | No |
+| GET | `/autenticacion/perfil` | Perfil del usuario autenticado | JWT |
+| POST | `/autenticacion/solicitar-restablecimiento` | Validar email y enviar enlace | No |
+| POST | `/autenticacion/validar-token-restablecimiento` | Comprobar token vigente | No |
+| POST | `/autenticacion/restablecer-contrasena` | Nueva contraseña (token único) | No |
+| GET | `/roles` | Listar roles | JWT admin, agent |
+| POST | `/solicitudes-interes` | Me interesa este proyecto | Opcional |
+| GET | `/solicitudes-interes` | Listar solicitudes | JWT admin, agent |
+| GET | `/solicitudes-interes/proyecto/:proyectoId` | Solicitudes por proyecto | JWT admin, agent |
+| GET | `/favoritos/ids` | IDs de proyectos favoritos del usuario | JWT |
+| GET | `/favoritos/proyecto/:proyectoId` | Comprobar si es favorito | JWT |
+| GET | `/favoritos` | Listar mis favoritos | JWT |
+| POST | `/favoritos` | Marcar proyecto favorito | JWT |
+| DELETE | `/favoritos/:proyectoId` | Quitar de favoritos | JWT |
 
 ---
 

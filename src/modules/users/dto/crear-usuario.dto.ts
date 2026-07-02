@@ -2,7 +2,7 @@
  * Archivo: crear-usuario.dto.ts
  * Ubicación: modules/users/dto
  * Tipo: DTO de entrada
- * Uso: POST /api/usuarios — registro de nuevo usuario
+ * Uso: POST /usuarios — registro de nuevo usuario
  */
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';

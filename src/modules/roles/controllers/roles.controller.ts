@@ -2,7 +2,7 @@
  * Archivo: roles.controller.ts
  * Ubicación: modules/roles/controllers
  * Tipo: Controlador REST
- * Endpoints: GET /api/roles
+ * Endpoints: GET /roles
  */
 
 import { Controller, Get, UseGuards } from '@nestjs/common';

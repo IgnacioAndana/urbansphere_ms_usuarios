@@ -2,7 +2,7 @@
  * Archivo: actualizar-usuario.dto.ts
  * Ubicación: modules/users/dto
  * Tipo: DTO de entrada
- * Uso: PATCH /api/usuarios/:id — actualización parcial de usuario
+ * Uso: PATCH /usuarios/:id — actualización parcial de usuario
  */
 
 import { ApiPropertyOptional } from '@nestjs/swagger';

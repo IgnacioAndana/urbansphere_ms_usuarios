@@ -2,7 +2,7 @@
  * Archivo: iniciar-sesion.dto.ts
  * Ubicación: modules/auth/dto
  * Tipo: DTO de entrada
- * Uso: POST /api/autenticacion/iniciar-sesion, /refrescar, /cerrar-sesion
+ * Uso: POST /autenticacion/iniciar-sesion, /refrescar, /cerrar-sesion
  */
 
 import { ApiProperty } from '@nestjs/swagger';

@@ -2,7 +2,7 @@
  * Archivo: usuarios.controller.ts
  * Ubicación: modules/users/controllers
  * Tipo: Controlador REST
- * Endpoints: POST/GET/PATCH/DELETE /api/usuarios
+ * Endpoints: POST/GET/PATCH/DELETE /usuarios
  */
 
 import {
