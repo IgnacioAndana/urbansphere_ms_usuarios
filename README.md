@@ -84,6 +84,7 @@ También puedes ejecutarlo desde **phpMyAdmin** o **MySQL Workbench** selecciona
 | `tokens_refresco` | Tokens de refresco JWT |
 | `tokens_restablecimiento` | Enlaces de recuperación de contraseña (un solo uso) |
 | `solicitudes_interes` | Formulario "Me interesa este proyecto" |
+| `proyectos_favoritos` | Proyectos marcados con corazón por el usuario |
 
 Al primer arranque, el servicio ejecuta un **seed** que crea los 3 roles si aún no existen.
 
@@ -377,6 +378,55 @@ curl -X GET http://localhost:3001/api/solicitudes-interes \
   -H "Authorization: Bearer TU_TOKEN_ACCESO"
 ```
 
+### Favoritos (corazón en proyectos)
+
+Requiere **JWT**. Distinto de "Me interesa": solo guarda `usuario_id` + `proyecto_id` (FK a `proyectos.id`) para el ícono de corazón.
+
+#### GET `/api/favoritos/ids` — IDs favoritos del usuario (para pintar corazones)
+
+```bash
+curl -X GET http://localhost:3001/api/favoritos/ids \
+  -H "Authorization: Bearer TU_TOKEN_ACCESO"
+```
+
+Respuesta: `{ "proyectoIds": [12, 34] }`
+
+#### GET `/api/favoritos/proyecto/:proyectoId` — ¿Está en favoritos?
+
+```bash
+curl -X GET http://localhost:3001/api/favoritos/proyecto/12 \
+  -H "Authorization: Bearer TU_TOKEN_ACCESO"
+```
+
+#### POST `/api/favoritos` — Agregar favorito
+
+```bash
+curl -X POST http://localhost:3001/api/favoritos \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer TU_TOKEN_ACCESO" \
+  -d "{\"proyectoId\":12}"
+```
+
+#### DELETE `/api/favoritos/:proyectoId` — Quitar favorito
+
+```bash
+curl -X DELETE http://localhost:3001/api/favoritos/12 \
+  -H "Authorization: Bearer TU_TOKEN_ACCESO"
+```
+
+#### GET `/api/favoritos` — Listar mis favoritos
+
+```bash
+curl -X GET http://localhost:3001/api/favoritos \
+  -H "Authorization: Bearer TU_TOKEN_ACCESO"
+```
+
+Migración en BD existente:
+
+```bash
+mysql -u USUARIO -p -h HOST porsusde_urbansphere < database/migracion-proyectos-favoritos.sql
+```
+
 ### Correo (Mailtrap)
 
 1. Registro en https://mailtrap.io
@@ -429,6 +479,11 @@ Invoke-RestMethod -Method Post -Uri "http://localhost:3001/api/autenticacion/ini
 | POST | `/api/solicitudes-interes` | Me interesa este proyecto | Opcional |
 | GET | `/api/solicitudes-interes` | Listar solicitudes | JWT admin, agent |
 | GET | `/api/solicitudes-interes/proyecto/:proyectoId` | Solicitudes por proyecto | JWT admin, agent |
+| GET | `/api/favoritos/ids` | IDs de proyectos favoritos del usuario | JWT |
+| GET | `/api/favoritos/proyecto/:proyectoId` | Comprobar si es favorito | JWT |
+| GET | `/api/favoritos` | Listar mis favoritos | JWT |
+| POST | `/api/favoritos` | Marcar proyecto favorito | JWT |
+| DELETE | `/api/favoritos/:proyectoId` | Quitar de favoritos | JWT |
 
 ---
 
@@ -462,6 +517,7 @@ Controller → Service → Repository → Entity → MySQL (porsusde_urbansphere
 | `usuarios` | `nombre`, `email`, `hash_contrasena`, `rol_id`, `activo`, `creado_en`, `actualizado_en` |
 | `roles` | `nombre`, `descripcion` |
 | `solicitudes_interes` | `proyecto_id`, `nombre`, `email`, `usuario_id`, `creado_en` |
+| `proyectos_favoritos` | `usuario_id`, `proyecto_id`, `creado_en` (único por usuario+proyecto) |
 | `tokens_restablecimiento` | `usuario_id`, `token`, `expira_en`, `usado`, `creado_en` |
 | `tokens_refresco` | `usuario_id`, `token`, `expira_en` |
 
@@ -533,7 +589,7 @@ MS_USUARIOS/
 │   │   ├── auth/
 │   │   ├── roles/
 │   │   ├── solicitudes-interes/
-│   │   └── roles/
+│   │   └── favoritos/
 │   ├── seed/             # Datos iniciales (3 roles)
 │   ├── app.module.ts
 │   └── main.ts

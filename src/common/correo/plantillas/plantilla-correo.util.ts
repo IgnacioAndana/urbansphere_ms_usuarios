@@ -90,12 +90,18 @@ function plantillaBase(opciones: {
 }
 
 function botonPrincipal(enlace: string, texto: string): string {
-  return `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px 0;">
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:24px 0;">
   <tr>
-    <td align="center" style="border-radius:8px;background-color:${COLORES.acento};">
-      <a href="${escaparHtml(enlace)}" target="_blank" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:8px;">
-        ${escaparHtml(texto)}
-      </a>
+    <td align="center">
+      <table role="presentation" cellspacing="0" cellpadding="0" align="center">
+        <tr>
+          <td align="center" style="border-radius:8px;background-color:${COLORES.acento};">
+            <a href="${escaparHtml(enlace)}" target="_blank" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:8px;">
+              ${escaparHtml(texto)}
+            </a>
+          </td>
+        </tr>
+      </table>
     </td>
   </tr>
 </table>`;

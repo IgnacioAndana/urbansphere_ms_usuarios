@@ -22,6 +22,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { SolicitudesInteresModule } from './modules/solicitudes-interes/solicitudes-interes.module';
+import { FavoritosModule } from './modules/favoritos/favoritos.module';
 import { SemillaModule } from './seed/semilla.module';
 
 @Module({
@@ -42,6 +43,7 @@ import { SemillaModule } from './seed/semilla.module';
     AuthModule,
     RolesModule,
     SolicitudesInteresModule,
+    FavoritosModule,
     SemillaModule,
   ],
   providers: [
